@@ -80,6 +80,6 @@ A profile that is not registered is invisible in the app, so work in progress is
      -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o artifacts/publish
    ```
 
-3. Rename it to `Pad8Lab-<version>-win-x64.exe`, sign it if you have a certificate (see the README),
-   and write the SHA-256 to `SHA256SUMS.txt`.
+3. Rename it to `Pad8Lab-<version>-win-x64.exe` and write the SHA-256 to `SHA256SUMS.txt`.
+   Sign the file first if you have a certificate, then hash the signed file.
 4. Publish a GitHub release with both files and mark it as latest.

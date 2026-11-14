@@ -11,7 +11,6 @@ knowledge about one controller model.
 | `src/Pad8Lab` | WPF app | The window, the log, the disclaimer gate and the live controller state. Calls only `FlashService`. |
 | `tests/ParityCheck` | console | Proves the C# firmware builder matches the validated reference image. |
 | `tests/HardwareCheck` | console | Runs devices, backup and check from a terminal. Never writes unless asked. |
-| `tools/SignTool` | console | Signs and verifies the published executable. |
 
 The core targets `net10.0-windows` because it talks to Win32 HID directly, with no external packages.
 

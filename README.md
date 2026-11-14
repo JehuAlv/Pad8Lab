@@ -86,20 +86,7 @@ SmartScreen only checks files that carry that tag, so this copy opens without th
 
 All of them verify your identity, so none is free. A self-signed or test certificate keeps the publisher unknown.
 
-When you have a certificate, the C# signing tool in `tools/SignTool` signs the single-file build with SHA-256 and an RFC 3161 timestamp, then verifies the result:
-
-```powershell
-# with a .pfx file
-dotnet run --project tools/SignTool -- --pfx .\cert.pfx --password "the password"
-
-# or with a certificate already in the Windows certificate store
-dotnet run --project tools/SignTool -- --thumbprint 0123456789ABCDEF0123456789ABCDEF01234567
-
-# check a file without signing it
-dotnet run --project tools/SignTool -- --verify-only
-```
-
-It needs `signtool.exe` from the Windows SDK (the *Signing Tools* component). Signing changes the file, so recalculate the SHA-256 and upload the signed executable again when you publish.
+The repository ships no signing tool: releases are published unsigned. If you sign your own build with `signtool.exe` or another tool, the signature changes the file, so recalculate its SHA-256 and update the release.
 
 ## Project layout
 
@@ -113,7 +100,6 @@ src/Pad8Lab.Core/Protocol/  app and bootloader protocols
 src/Pad8Lab/                the WPF desktop app (Setup and About tabs)
 tests/ParityCheck/          proves the C# builder matches the validated reference image
 tests/HardwareCheck/        runs devices, backup and check from the console
-tools/SignTool/             signs and verifies the published executable
 docs/                       screenshots and architecture notes
 .github/                    CI workflow, issue forms and the pull request template
 ```
