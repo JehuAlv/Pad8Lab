@@ -57,7 +57,6 @@
     <Geometry x:Key="IconCheck">M9.5 16.2 5.3 12l-1.4 1.4 5.6 5.6L20.1 8.4 18.7 7z</Geometry>
     <Geometry x:Key="IconWarning">M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z</Geometry>
     <Geometry x:Key="IconInfo">M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z</Geometry>
-    <Geometry x:Key="IconBluetooth">M17.7 7.7 12 2h-1v7.6L6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 11 14.4V22h1l5.7-5.7-4.3-4.3 4.3-4.3zM13 5.8l1.9 1.9L13 9.6V5.8zm1.9 10.5L13 18.2v-3.8l1.9 1.9z</Geometry>
     <Geometry x:Key="IconBackup">M11 3h2v10.2l3.6-3.6 1.4 1.4-6 6-6-6 1.4-1.4L11 13.2V3zM4 19h16v2H4z</Geometry>
     <Geometry x:Key="IconSpark">M12 2l1.6 4.4L18 8l-4.4 1.6L12 14l-1.6-4.4L6 8l4.4-1.6L12 2zm7 11 .9 2.6 2.6.9-2.6.9L19 21l-.9-2.6-2.6-.9 2.6-.9L19 13zM5 14l.7 2 2 .7-2 .7L5 19.5l-.7-2.1-2-.7 2-.7L5 14z</Geometry>
     <Geometry x:Key="IconUndo">M12 5V1L7 6l5 5V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z</Geometry>
@@ -68,8 +67,6 @@
     <Geometry x:Key="IconFolder">M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2z</Geometry>
     <Geometry x:Key="IconChevron">M7 9l5 5 5-5 1.4 1.4L12 16.8 5.6 10.4z</Geometry>
     <Geometry x:Key="IconGamepad">F0 M6.6,7.2 L17.4,7.2 C19.56,7.2 21,8.76 21.12,10.68 C21.24,12.84 20.76,15 19.8,16.32 C19.08,17.28 17.88,17.28 17.04,16.44 L15.84,15.24 C14.76,14.16 9.24,14.16 8.16,15.24 L6.96,16.44 C6.12,17.28 4.92,17.28 4.2,16.32 C3.24,15 2.76,12.84 2.88,10.68 C3,8.76 4.44,7.2 6.6,7.2 Z M7.44,8.64 L8.88,8.64 L8.88,10.44 L10.68,10.44 L10.68,11.88 L8.88,11.88 L8.88,13.68 L7.44,13.68 L7.44,11.88 L5.64,11.88 L5.64,10.44 L7.44,10.44 Z M13.85,11.16 A1.03,1.03 0 1 0 15.91,11.16 A1.03,1.03 0 1 0 13.85,11.16 Z M16.25,11.16 A1.03,1.03 0 1 0 18.31,11.16 A1.03,1.03 0 1 0 16.25,11.16 Z</Geometry>
-    <Geometry x:Key="IconLock">M12 2a5 5 0 0 0-5 5v3H5v12h14V10h-2V7a5 5 0 0 0-5-5zm0 2a3 3 0 0 1 3 3v3H9V7a3 3 0 0 1 3-3z</Geometry>
-    <Geometry x:Key="IconDot">M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z</Geometry>
 
     <!-- text -->
     <Style x:Key="H1" TargetType="TextBlock">

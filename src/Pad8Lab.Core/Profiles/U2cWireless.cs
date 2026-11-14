@@ -31,6 +31,7 @@ public static class U2cWireless
     public static readonly ControllerProfile Profile = new(
         Id,
         "8BitDo Ultimate 2C Wireless",
+        "Ultimate 2C Wireless",
         "8BitDo",
         "It only works with the Ultimate 2C on firmware 1.09.",
         "Turn the controller fully off, then hold LB + RB while plugging in the cable. The small light below the Home ring will blink white.",

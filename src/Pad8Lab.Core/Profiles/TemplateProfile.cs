@@ -35,6 +35,7 @@ public static class TemplateProfile
         return new ControllerProfile(
             id: "vendor-model",
             name: "Example controller (template, not registered)",
+            shortName: "Example controller",
             vendor: "Your vendor",
             disclaimer: "Replace this with which model and firmware versions the app supports.",
             bootHelp: "Replace this with how to put the model into update mode.",

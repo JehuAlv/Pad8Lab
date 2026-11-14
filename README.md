@@ -12,7 +12,7 @@ Support is profile-based: **only the Ultimate 2C Wireless is registered today**,
 
 ## Screenshots
 
-<img src="docs/screenshots/setup.png" alt="The guided setup: connect the cable, back up, install the tweaks and pair again" width="860">
+<img src="docs/screenshots/setup.png" alt="The guided setup: connect the cable, back up, install the tweaks and reconnect" width="860">
 
 <img src="docs/screenshots/about.png" alt="What the app does, the controller state and what to do with the SmartScreen warning" width="860">
 
@@ -42,8 +42,8 @@ The tweaks are small edits to the firmware that runs **inside the controller**. 
 
 1. **Back up.** Connect the controller **by cable** and press *Back up controller*. The backup is the safety net: it contains your unit's bootloader check, calibration and Bluetooth keys, and the app refuses to write anything without one.
 2. **Check.** Press *Check (no write)* to see what would change.
-3. **Install the tweaks.** Tick the disclaimer box and press *Install Bluetooth rumble*. The app puts the controller into update mode, writes the changes, verifies them and restarts it.
-4. **Pair again.** Remove the controller in **Settings → Bluetooth & devices** and pair it again, so Windows re-reads the new description.
+3. **Install the tweaks.** Tick the disclaimer box and press *Install*. The app puts the controller into update mode, writes the changes, verifies them and restarts it.
+4. **Reconnect.** Unplug the cable. Remove the controller in **Settings → Bluetooth & devices** and pair it again, so Windows re-reads the new description.
 5. **Play.** Turn the controller on over Bluetooth. Windows shows it as an Xbox controller and games can make it vibrate.
 
 To go back, **restore your backup** the same way. The app puts back the newest backup that still holds the original firmware, so restoring also undoes the tweaks.

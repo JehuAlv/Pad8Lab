@@ -13,6 +13,7 @@ public sealed class ControllerProfileTests
     {
         Assert.Equal("8bitdo-u2c-wireless", U2c.Id);
         Assert.Equal("8BitDo Ultimate 2C Wireless", U2c.Name);
+        Assert.Equal("Ultimate 2C Wireless", U2c.ShortName);
         Assert.Equal("8BitDo", U2c.Vendor);
     }
 

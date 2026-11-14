@@ -11,6 +11,7 @@ public sealed class ControllerProfile
     public ControllerProfile(
         string id,
         string name,
+        string shortName,
         string vendor,
         string disclaimer,
         string bootHelp,
@@ -25,6 +26,8 @@ public sealed class ControllerProfile
             throw new ArgumentException("A profile needs an id.", nameof(id));
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("A profile needs a name.", nameof(name));
+        if (string.IsNullOrWhiteSpace(shortName))
+            throw new ArgumentException("A profile needs a short name.", nameof(shortName));
         if (string.IsNullOrWhiteSpace(vendor))
             throw new ArgumentException("A profile needs a vendor.", nameof(vendor));
         if (modes.Count == 0)
@@ -35,6 +38,7 @@ public sealed class ControllerProfile
 
         Id = id;
         Name = name;
+        ShortName = shortName;
         Vendor = vendor;
         Disclaimer = disclaimer;
         BootHelp = bootHelp;
@@ -48,6 +52,9 @@ public sealed class ControllerProfile
 
     public string Id { get; }
     public string Name { get; }
+
+    /// <summary>The model name without the vendor, for compact labels.</summary>
+    public string ShortName { get; }
 
     /// <summary>Who makes the controller, used in the restore wording.</summary>
     public string Vendor { get; }

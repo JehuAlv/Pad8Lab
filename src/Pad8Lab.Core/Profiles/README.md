@@ -49,4 +49,4 @@ A **profile** describes one controller family. The generic core (device discover
 
 `SuggestedTweaks` is what the app offers for the model. `ImplicitTweaks` is added to every install when the user chooses at least one tweak (the U2C adds `ble_interval`). Both are plain recipe keys; a template can leave them empty.
 
-The vendor, disclaimer and update-mode instructions are part of the profile so the core does not hardcode a manufacturer or a physical button combination in user-facing messages.
+The vendor, short name, disclaimer and update-mode instructions are part of the profile so the core does not hardcode a manufacturer or a physical button combination in user-facing messages.

@@ -44,8 +44,9 @@
                         <TextBlock x:Name="VersionText" Style="{StaticResource Caption}" Foreground="{StaticResource MutedBrush}" Text="1.0.1"/>
                     </Border>
                 </StackPanel>
-                <TextBlock Style="{StaticResource Muted}" Margin="0,1,0,0"
-                           Text="Custom firmware for 8BitDo controllers. Ultimate 2C Wireless supported today."/>
+                <TextBlock x:Name="SubtitleText" Style="{StaticResource Muted}" Margin="0,1,0,0"
+                           TextTrimming="CharacterEllipsis"
+                           Text="Custom firmware for 8BitDo controllers."/>
             </StackPanel>
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
@@ -380,7 +381,7 @@
                                     <StackPanel Grid.Column="1" Margin="12,1,12,0">
                                         <TextBlock Text="Connect the controller by USB-C" Style="{StaticResource H2}"/>
                                         <TextBlock Style="{StaticResource Muted}" Margin="0,3,0,0"
-                                                   Text="Flashing only works over the cable. Bluetooth and the 2.4 GHz dongle cannot flash."/>
+                                                   Text="Flashing only works over the cable. Wireless modes cannot flash."/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                         <Border x:Name="ConnectionChip" Background="#1A2130" CornerRadius="8" Padding="9,4">
@@ -447,9 +448,9 @@
                                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
                                     <StackPanel Grid.Column="1" Margin="12,1,14,0">
-                                        <TextBlock Text="Install the Bluetooth tweaks" Style="{StaticResource H2}"/>
-                                        <TextBlock Style="{StaticResource Muted}" Margin="0,3,0,0"
-                                                   Text="Adds native Xbox identity and rumble over Bluetooth. Writes 819 bytes, then reads them back to verify."/>
+                                        <TextBlock Text="Install the tweaks" Style="{StaticResource H2}"/>
+                                        <TextBlock x:Name="InstallHelpText" Style="{StaticResource Muted}" Margin="0,3,0,0"
+                                                   Text="Writes only the firmware regions the tweaks change, then reads them back to verify."/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                         <Button x:Name="InstallButton" AutomationProperties.AutomationId="InstallButton" Style="{StaticResource PrimaryButton}" Width="186"
@@ -491,9 +492,9 @@
                                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
                                     <StackPanel Grid.Column="1" Margin="12,1,0,0">
-                                        <TextBlock Text="Pair it again over Bluetooth" Style="{StaticResource H2}"/>
-                                        <TextBlock Style="{StaticResource Muted}" Margin="0,3,0,0"
-                                                   Text="Unplug the cable. In Windows Settings, remove the controller and pair it again so Windows reads its new Xbox identity. Now games see a real Xbox pad and can make it vibrate."/>
+                                        <TextBlock Text="Reconnect the controller" Style="{StaticResource H2}"/>
+                                        <TextBlock x:Name="ReconnectHelpText" Style="{StaticResource Muted}" Margin="0,3,0,0"
+                                                   Text="Unplug the cable and connect the controller the way you normally use it. If Windows shows it as a new device, remove it in Settings and pair it again."/>
                                     </StackPanel>
                                 </Grid>
                             </Border>
@@ -512,7 +513,8 @@
                                     <StackPanel Grid.Column="1" Margin="11,0,10,0" VerticalAlignment="Center">
                                         <TextBlock Text="Changed your mind?" Style="{StaticResource Body}" FontSize="12.5" FontWeight="SemiBold"/>
                                         <TextBlock Style="{StaticResource Muted}" Margin="0,1,0,0" FontSize="12"
-                                                   Text="Restore puts back the backup that still holds the original firmware 1.09."/>
+                                                   x:Name="RestoreHelpText"
+                                                   Text="Restore puts back the backup that still holds the original firmware."/>
                                     </StackPanel>
                                     <Button x:Name="RestoreButton" AutomationProperties.AutomationId="RestoreButton" Grid.Column="2" Style="{StaticResource SecondaryButton}"
                                             Click="Restore_Click" VerticalAlignment="Center" Content="Restore"/>
@@ -534,30 +536,33 @@
                                 <StackPanel>
                                     <TextBlock Text="What this does" Style="{StaticResource H2}"/>
                                     <TextBlock Style="{StaticResource Body}" Margin="0,7,0,0"
-                                               Text="Pad8Lab flashes custom firmware profiles onto 8BitDo controllers. A profile holds the model's flash map, firmware catalog and update protocol, so new models can be added without changing the flashing core. The first registered profile is the Ultimate 2C Wireless: over Bluetooth it is a plain HID gamepad on Windows, so the app flashes 8BitDo's own firmware with two small edits, and the controller reports as an Xbox Series X|S pad (045e:0b13) and vibrates over Bluetooth. The change lives inside the controller, so after one flash it works on any Windows PC, with no drivers, no dongle and no virtual pad."/>
+                                               Text="Pad8Lab flashes custom firmware profiles onto 8BitDo controllers. A profile holds the model's flash map, firmware catalog, update protocol and tweaks, so a new model is a new profile rather than a change to the flashing core. The change lives inside the controller: after one flash it works on any Windows PC, with no drivers and no virtual pad."/>
+                                    <TextBlock x:Name="SupportedText" Style="{StaticResource Muted}" Margin="0,9,0,0"
+                                               TextWrapping="Wrap"
+                                               Text="Supported today:"/>
 
                                     <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
                                         <Border Background="#16261F" CornerRadius="9" Padding="11,8" Margin="0,0,8,0">
                                             <StackPanel Orientation="Horizontal">
-                                                <Path Data="{StaticResource IconGamepad}" Width="15" Height="15" Stretch="Uniform"
+                                                <Path Data="{StaticResource IconShield}" Width="15" Height="15" Stretch="Uniform"
                                                       Fill="{StaticResource SuccessBrush}" VerticalAlignment="Center"/>
-                                                <TextBlock Text="Xbox / XInput" Margin="7,0,0,0" FontSize="12"
+                                                <TextBlock Text="Backup protected" Margin="7,0,0,0" FontSize="12"
                                                            Foreground="{StaticResource SuccessBrush}" FontWeight="SemiBold"/>
                                             </StackPanel>
                                         </Border>
                                         <Border Background="#101F2A" CornerRadius="9" Padding="11,8" Margin="0,0,8,0">
                                             <StackPanel Orientation="Horizontal">
-                                                <Path Data="{StaticResource IconBluetooth}" Width="15" Height="15" Stretch="Uniform"
+                                                <Path Data="{StaticResource IconSpark}" Width="15" Height="15" Stretch="Uniform"
                                                       Fill="{StaticResource Accent2Brush}" VerticalAlignment="Center"/>
-                                                <TextBlock Text="Rumble over Bluetooth" Margin="7,0,0,0" FontSize="12"
+                                                <TextBlock Text="One-time flash" Margin="7,0,0,0" FontSize="12"
                                                            Foreground="{StaticResource Accent2Brush}" FontWeight="SemiBold"/>
                                             </StackPanel>
                                         </Border>
                                         <Border Background="#1A1730" CornerRadius="9" Padding="11,8">
                                             <StackPanel Orientation="Horizontal">
-                                                <Path Data="{StaticResource IconLock}" Width="15" Height="15" Stretch="Uniform"
+                                                <Path Data="{StaticResource IconUndo}" Width="15" Height="15" Stretch="Uniform"
                                                       Fill="#B8A8FF" VerticalAlignment="Center"/>
-                                                <TextBlock Text="One-time flash" Margin="7,0,0,0" FontSize="12"
+                                                <TextBlock Text="Reversible" Margin="7,0,0,0" FontSize="12"
                                                            Foreground="#B8A8FF" FontWeight="SemiBold"/>
                                             </StackPanel>
                                         </Border>

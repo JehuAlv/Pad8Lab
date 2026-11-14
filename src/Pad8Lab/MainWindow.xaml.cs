@@ -30,6 +30,8 @@ public partial class MainWindow : Window
     private IReadOnlyList<string> _modes = Array.Empty<string>();
     private string _deviceSignature = string.Empty;
     private bool _planChanges;
+    private int _planDiffBytes;
+    private ControllerProfile _profile = ProfileRegistry.Default.Profiles[0];
 
     private enum StatusKind
     {
@@ -44,6 +46,13 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         VersionText.Text = "v" + (Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0");
+
+        // the header and the About tab list whatever the registry supports today
+        var profiles = ProfileRegistry.Default.Profiles;
+        SubtitleText.Text = $"Custom firmware for 8BitDo controllers. {Plan.Listed(profiles.Select(p => p.ShortName))} supported today.";
+        SupportedText.Text = "Supported today: " + string.Join("; ",
+            profiles.Select(p => $"{p.Name} on firmware {p.SupportedVersions}."));
+        ApplyProfileText(_profile);
 
         // keeps the window inside the screen on small displays or high scaling
         var work = SystemParameters.WorkArea;
@@ -88,11 +97,7 @@ public partial class MainWindow : Window
         SetStatus("Looking for the controller...", StatusKind.Busy);
         try
         {
-            var (lines, modes) = await Task.Run(() =>
-            {
-                var found = _service.Find();
-                return (_service.DescribeDevices(), (IReadOnlyList<string>)found.Select(f => f.Mode).ToList());
-            });
+            var (found, lines) = await Task.Run(() => (_service.Find(), _service.DescribeDevices()));
 
             // only logs the device list when it changes, so repeated refreshes stay quiet
             var signature = string.Join("\n", lines);
@@ -103,8 +108,9 @@ public partial class MainWindow : Window
                     Log(line);
             }
 
-            _modes = modes;
-            ApplyDeviceState(modes);
+            _modes = found.Select(f => f.Mode).ToList();
+            UseProfile(found.Select(f => f.Profile).FirstOrDefault());
+            ApplyDeviceState(_modes);
         }
         catch (Exception ex)
         {
@@ -126,7 +132,9 @@ public partial class MainWindow : Window
         _probing = true;
         try
         {
-            var modes = await Task.Run(() => _service.Find().Select(f => f.Mode).ToList());
+            var found = await Task.Run(() => _service.Find());
+            var modes = found.Select(f => f.Mode).ToList();
+            UseProfile(found.Select(f => f.Profile).FirstOrDefault());
             if (SameModes(modes, _modes))
                 return;
 
@@ -156,6 +164,30 @@ public partial class MainWindow : Window
     private static bool SameModes(IReadOnlyList<string> a, IReadOnlyList<string> b) =>
         a.Count == b.Count && a.OrderBy(m => m).SequenceEqual(b.OrderBy(m => m));
 
+    // follows the model that is connected, or the first registered one when nothing is
+    private void UseProfile(ControllerProfile? profile)
+    {
+        profile ??= ProfileRegistry.Default.Profiles[0];
+        if (ReferenceEquals(profile, _profile))
+            return;
+        _profile = profile;
+        ApplyProfileText(profile);
+    }
+
+    // the flow names the model's own tweaks and firmware version
+    private void ApplyProfileText(ControllerProfile profile)
+    {
+        var titles = profile.SuggestedTweaks
+            .Where(key => profile.Primary.Catalog.All.ContainsKey(key))
+            .Select(key => profile.Primary.Catalog.All[key].Title)
+            .ToList();
+        InstallHelpText.Text = titles.Count == 0
+            ? "Writes only the firmware regions the tweaks change, then reads them back to verify."
+            : $"Adds {Plan.Listed(titles)}. Writes only those regions, then verifies them.";
+        RestoreHelpText.Text =
+            $"Restore puts back the backup that still holds the original firmware {profile.Primary.Version:0.00}.";
+    }
+
     // maps the device modes onto the status pill, the connection row and the buttons
     private void ApplyDeviceState(IReadOnlyList<string> modes)
     {
@@ -182,19 +214,19 @@ public partial class MainWindow : Window
         }
         else if (bluetooth)
         {
-            SetStatus("Bluetooth - connect the cable to flash", StatusKind.Info);
-            ConnectionChipText.Text = "Bluetooth";
+            SetStatus("Wireless - connect the cable to flash", StatusKind.Info);
+            ConnectionChipText.Text = "Wireless";
             ConnectionChipText.Foreground = Brush("Accent2Brush");
             ConnectionChip.Background = Solid("#11222B");
-            ConnectionText.Text = "Bluetooth";
+            ConnectionText.Text = "Wireless";
         }
         else if (dongle)
         {
-            SetStatus("Only the dongle is connected", StatusKind.Warn);
-            ConnectionChipText.Text = "Dongle only";
+            SetStatus("Only the wireless adapter is connected", StatusKind.Warn);
+            ConnectionChipText.Text = "Adapter only";
             ConnectionChipText.Foreground = Brush("WarnBrush");
             ConnectionChip.Background = Solid("#2A2113");
-            ConnectionText.Text = "2.4 GHz dongle";
+            ConnectionText.Text = "Wireless adapter";
         }
         else
         {
@@ -321,8 +353,10 @@ public partial class MainWindow : Window
     {
         var installed = !plan.BankA && plan.OtherSectors.Count == 0;
         _planChanges = !installed;
+        _planDiffBytes = plan.DiffBytes;
         Dispatcher.BeginInvoke(
-            () => SetFirmware(installed ? "Rumble + Xbox" : "Original 1.09", installed ? StatusKind.Ok : StatusKind.Muted));
+            () => SetFirmware(installed ? "Tweaked" : $"Original {_profile.Primary.Version:0.00}",
+                installed ? StatusKind.Ok : StatusKind.Muted));
     }
 
     private void SetFirmware(string text, StatusKind kind)
@@ -427,7 +461,7 @@ public partial class MainWindow : Window
             return;
 
         if (await RunAsync("backup", () => _service.Backup(Log, ShowProgress)))
-            ShowResult(true, "Backup saved. It holds your unit's bootloader check, calibration and Bluetooth keys.");
+            ShowResult(true, "Backup saved. It holds your unit's bootloader check, calibration and pairing data.");
     }
 
     private async void Check_Click(object sender, RoutedEventArgs e)
@@ -439,14 +473,14 @@ public partial class MainWindow : Window
             return;
 
         ShowResult(true, _planChanges
-            ? "The tweaks are not installed yet. Installing them changes 819 bytes of the firmware."
+            ? $"The tweaks are not installed yet. Installing them writes {Plan.Count(_planDiffBytes, "byte")} of the firmware."
             : "The tweaks are already installed. There is nothing to write.");
     }
 
     private async void Install_Click(object sender, RoutedEventArgs e)
     {
-        if (!ConfirmWindow.Ask(this, "Install the Bluetooth tweaks?",
-                "This writes 819 bytes to the controller's firmware, reads them back to verify, and restarts the controller. " +
+        if (!ConfirmWindow.Ask(this, "Install the tweaks?",
+                "This writes only the firmware regions the tweaks change, reads them back to verify and restarts the controller. " +
                 "Make sure the USB-C cable is connected and that you have a backup.",
                 "Install"))
             return;
@@ -458,16 +492,16 @@ public partial class MainWindow : Window
         if (!ok)
             return;
 
-        SetFirmware("Rumble + Xbox", StatusKind.Ok);
+        SetFirmware("Tweaked", StatusKind.Ok);
         ShowResult(true, _planChanges
-            ? "Installed and verified. Unplug the cable, then remove and pair the controller again in Windows Bluetooth settings."
+            ? "Installed and verified. Unplug the cable and reconnect the controller; if Windows shows it as a new device, remove it in Settings and pair it again."
             : "The tweaks were already installed, so nothing was written.");
     }
 
     private async void Restore_Click(object sender, RoutedEventArgs e)
     {
         if (!ConfirmWindow.Ask(this, "Restore the original firmware?",
-                "This writes the original firmware 1.09 from your backup back to the controller, verifies it and undoes the tweaks.",
+                $"This writes the original firmware {_profile.Primary.Version:0.00} from your backup back to the controller, verifies it and undoes the tweaks.",
                 "Restore"))
             return;
 
@@ -478,9 +512,9 @@ public partial class MainWindow : Window
         if (!ok)
             return;
 
-        SetFirmware("Original 1.09", StatusKind.Muted);
+        SetFirmware($"Original {_profile.Primary.Version:0.00}", StatusKind.Muted);
         ShowResult(true, _planChanges
-            ? "Original firmware restored and verified. If Bluetooth changed, remove and pair the controller again."
+            ? "Original firmware restored and verified. Reconnect the controller; if Windows still shows its old identity, remove it in Settings and pair it again."
             : "The controller already has the original firmware, so nothing was written.");
     }
 
