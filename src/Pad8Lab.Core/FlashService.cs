@@ -11,9 +11,9 @@ public sealed class FlashService
     private const string Replug =
         "The controller hasn't come back yet: unplug it, hold Home for about 12 seconds until it turns off, then connect it again.";
     private const string Installed =
-        "Installed. {} If you changed a Bluetooth tweak, remove the controller in Windows Settings \u2192 Bluetooth & devices and pair it again.";
+        "Installed. {} If you changed how the controller connects, remove it in Windows Settings \u2192 Bluetooth & devices and pair it again.";
     private const string Restored =
-        "Restored. {} If its Bluetooth tweaks changed, remove the controller in Windows Settings \u2192 Bluetooth & devices and pair it again.";
+        "Restored. {} If how the controller connects changed, remove it in Windows Settings \u2192 Bluetooth & devices and pair it again.";
     private const string NotEntered = "The controller didn't restart into update mode, so nothing was written. ";
     private const string InUpdateMode =
         "The controller is in update mode and nothing was written. Try again: the app installs and restores from there too.";
@@ -269,7 +269,7 @@ public sealed class FlashService
         if (present.Count == 0 || !modes.Contains(present[0].Mode))
         {
             if (present.Count > 0 && ControllerProfile.IsDongleMode(present[0].Mode))
-                throw new OpException("That is the 2.4 GHz dongle, and this only works with the controller.");
+                throw new OpException("That is a wireless adapter, not the controller. Connect the controller by cable.");
             var help = string.Join(" ", _registry.Profiles.Select(p => p.BootHelp).Distinct());
             var want = modes.Contains(DeviceMode.Cable) ? "by cable" : "in update mode. " + help;
             throw new OpException($"No controller found {want}");
