@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/app/">
+    <Project Path="app/Pad8Lab.Core/Pad8Lab.Core.csproj" />
+    <Project Path="app/Pad8Lab/Pad8Lab.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/HardwareCheck/HardwareCheck.csproj" />
+    <Project Path="tests/ParityCheck/ParityCheck.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="scripts/SignTool/SignTool.csproj" />
+  </Folder>
+</Solution>

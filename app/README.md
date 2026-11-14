@@ -1,8 +1,8 @@
-# U2cRumble (Windows app)
+# Pad8Lab (Windows app)
 
 A small Windows desktop app (WPF, .NET 10) that gives the **8BitDo Ultimate 2C Wireless** real
 **rumble over Bluetooth** and a **native Xbox identity** on Windows 11. It is the graphical front end
-for the C# flashing core in [`../U2cRumble.Core`](../U2cRumble.Core).
+for the C# flashing core in [`../Pad8Lab.Core`](../Pad8Lab.Core).
 
 ## What it does
 
@@ -26,16 +26,16 @@ Requires only the **.NET 10 SDK**.
 
 ```sh
 # from the repository root
-dotnet build app/U2cRumble/U2cRumble.csproj -c Release
-dotnet run --project app/U2cRumble/U2cRumble.csproj
+dotnet build app/Pad8Lab/Pad8Lab.csproj -c Release
+dotnet run --project app/Pad8Lab/Pad8Lab.csproj
 ```
 
 ## Files
 
-- `U2cRumble.csproj` - the WPF project (net10.0-windows).
+- `Pad8Lab.csproj` - the WPF project (net10.0-windows).
 - `App.xaml`, `App.xaml.cs` - application entry point.
 - `MainWindow.xaml`, `MainWindow.xaml.cs` - the Setup and About tabs.
-- `../U2cRumble.Core` - the flashing core, a separate class library.
+- `../Pad8Lab.Core` - the flashing core, a separate class library.
 
 ## License
 

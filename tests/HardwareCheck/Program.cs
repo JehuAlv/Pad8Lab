@@ -1,4 +1,4 @@
-using U2cRumble.Core;
+using Pad8Lab.Core;
 
 // read-only runs of the C# flashing core against a connected controller
 if (args.Length < 1)
@@ -29,7 +29,7 @@ try
             break;
 
         case "check":
-            service.Install(new[] { "bt_xbox", "bt_rumble" }, write: false, disclaimerAccepted: false,
+            service.Install(service.SuggestedTweaks(), write: false, disclaimerAccepted: false,
                 Log, Progress);
             break;
 

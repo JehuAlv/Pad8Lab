@@ -109,7 +109,7 @@ internal static class Program
               dotnet run --project scripts/SignTool -- [options]
 
             Options:
-              --file <exe>          file to sign (default: newest artifacts/U2cRumble-*-win-x64.exe)
+              --file <exe>          file to sign (default: newest artifacts/Pad8Lab-*-win-x64.exe)
               --pfx <path>          .pfx certificate file
               --password <value>    password for the .pfx file
               --thumbprint <sha1>   thumbprint of a certificate in the Windows store
@@ -126,7 +126,7 @@ internal static class Program
         if (!dir.Exists)
             return null;
 
-        return dir.GetFiles("U2cRumble-*-win-x64.exe")
+        return dir.GetFiles("Pad8Lab-*-win-x64.exe")
             .OrderByDescending(f => f.LastWriteTimeUtc)
             .FirstOrDefault()?.FullName;
     }

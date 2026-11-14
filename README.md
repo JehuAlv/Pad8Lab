@@ -1,12 +1,14 @@
-# 8BitDo Ultimate 2C Wireless — Bluetooth Rumble & XInput for Windows
+# Pad8Lab — Bluetooth Rumble & XInput for the 8BitDo Ultimate 2C Wireless
 
 **Convert your 8BitDo Ultimate 2C Wireless to XInput over Bluetooth on Windows 11**: real **rumble over Bluetooth** and a **native Xbox controller** identity, with no drivers, no dongle and no virtual pad.
 
 Out of the box, over Bluetooth, the Ultimate 2C Wireless is a plain HID gamepad on Windows: it does not rumble, and many games do not recognise it. This app flashes 8BitDo's **own** firmware with two small tweaks, so the controller presents itself as an **Xbox Series X|S** pad and **vibrates over Bluetooth**. The change lives inside the controller, so after one flash it works on any Windows PC.
 
+Pad8Lab is built around controller profiles: the Ultimate 2C Wireless is the only model registered today, and more models can be added without rewriting the flashing core.
+
 > **Use at your own risk.** Flashing modified firmware probably voids the controller's warranty. It is reversible (your backup restores the original firmware), but it is not risk-free. Read the [disclaimer](#safety-and-disclaimer) before you start. This project is **not affiliated with or endorsed by 8BitDo**.
 
-**[Download the latest release](https://github.com/JehuAlv/8bitdo-ultimate-2c-wireless-rumble/releases/latest)** — a self-contained Windows x64 `.exe`, no .NET runtime or Python needed.
+**[Download the latest release](https://github.com/JehuAlv/Pad8Lab/releases/latest)** — a self-contained Windows x64 `.exe`, no .NET runtime or Python needed.
 
 ## Screenshots
 
@@ -61,7 +63,7 @@ To run it, press **More info**, then **Run anyway**.
 To check that the file is the one published here, compare its SHA-256 with the value in `SHA256SUMS.txt` from the same release:
 
 ```powershell
-Get-FileHash .\U2cRumble-1.0.3-win-x64.exe -Algorithm SHA256
+Get-FileHash .\Pad8Lab-1.0.3-win-x64.exe -Algorithm SHA256
 ```
 
 Only a code-signing certificate (OV or EV) removes that warning for everyone; a self-signed certificate does not help. The app is open source, so the code that runs is the code in this repository.
@@ -71,7 +73,7 @@ Only a code-signing certificate (OV or EV) removes that warning for everyone; a 
 **For your own copy:** remove the internet tag that Windows puts on downloaded files. Right-click the `.exe`, open **Properties**, tick **Unblock**, then **OK**. In PowerShell the same thing is:
 
 ```powershell
-Unblock-File .\U2cRumble-1.0.3-win-x64.exe
+Unblock-File .\Pad8Lab-1.0.3-win-x64.exe
 ```
 
 SmartScreen only checks files that carry that tag, so this copy opens without the prompt. It does not change the file's contents and it does not help anyone else.
@@ -102,22 +104,30 @@ It needs `signtool.exe` from the Windows SDK (the *Signing Tools* component). Si
 ## Project layout
 
 ```
-app/U2cRumble.Core/   the flashing core, 100% C# (HID, protocols, tweaks, backup, patch, restore)
-app/U2cRumble/        the WPF desktop app (Setup and About tabs)
-tests/ParityCheck/    proves the C# builder matches the validated reference image
-tests/HardwareCheck/  runs devices, backup and check from the console
+app/Pad8Lab.Core/          the flashing core, 100% C# (HID, protocols, tweaks, backup, patch, restore)
+app/Pad8Lab.Core/Profiles/ per-model profiles; only registered profiles appear in the app
+app/Pad8Lab.Core/Profiles/README.md  how to add a new controller model
+app/Pad8Lab/               the WPF desktop app (Setup and About tabs)
+tests/ParityCheck/           proves the C# builder matches the validated reference image
+tests/HardwareCheck/         runs devices, backup and check from the console
 ```
 
-`U2cRumble.Core` uses Win32 HID calls directly, with no external packages.
+`Pad8Lab.Core` uses Win32 HID calls directly, with no external packages.
+
+### Adding another controller model
+
+The core is built around `ControllerProfile`: model identity, flash layout, firmware targets, update protocol and tweak catalog. `ProfileRegistry.Default` is the only place that decides which models the app supports, and today it registers only the Ultimate 2C Wireless.
+
+`app/Pad8Lab.Core/Profiles/TemplateProfile.cs` is a non-registered worked example with placeholder values. It is compiled but never shown in the GUI, so it cannot be selected by users. Read [the profiles guide](app/Pad8Lab.Core/Profiles/README.md) before adding a model.
 
 ## Build and run
 
 ```sh
-git clone https://github.com/JehuAlv/8bitdo-ultimate-2c-wireless-rumble
-cd 8bitdo-ultimate-2c-wireless-rumble
+git clone https://github.com/JehuAlv/Pad8Lab
+cd Pad8Lab
 
-dotnet build app/U2cRumble/U2cRumble.csproj -c Release
-dotnet run --project app/U2cRumble/U2cRumble.csproj
+dotnet build app/Pad8Lab/Pad8Lab.csproj -c Release
+dotnet run --project app/Pad8Lab/Pad8Lab.csproj
 ```
 
 ### Run it headless

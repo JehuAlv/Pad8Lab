@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
-using U2cRumble.Core.Firmware;
+using Pad8Lab.Core.Firmware;
+using Pad8Lab.Core.Profiles;
 
 // checks the C# firmware builder against the image the original Python core produced for the same controller
 if (args.Length < 1)
@@ -12,21 +13,25 @@ if (args.Length < 1)
 const string ExpectedSha256 = "aa63a987cdfb377c2ed8b6835aca73ed6265e6ff9ca689f7331b0d352c68ea45";
 const int ExpectedSize = 77824;
 
+var profile = U2cWireless.Profile;
+var layout = profile.Layout;
+var catalog = profile.Primary.Catalog;
+
 var backup = File.ReadAllBytes(args[0]);
-if (backup.Length != Image.FlashSize)
+if (backup.Length != layout.FlashSize)
 {
     Console.Error.WriteLine($"not a full backup: {backup.Length} bytes");
     return 2;
 }
 
-var stock = backup[Image.Base..(Image.Base + Image.BankASize)];
+var stock = backup[layout.Base..(layout.Base + layout.BankASize)];
 var keys = (args.Length > 2 ? args[2] : "bt_xbox,bt_rumble,ble_interval")
     .Split(',', StringSplitOptions.RemoveEmptyEntries);
 
 byte[] built;
 try
 {
-    built = Recipes.Build(stock, keys);
+    built = catalog.Build(stock, keys);
 }
 catch (RecipeException e)
 {
@@ -41,9 +46,9 @@ void Check(bool condition, string message)
     ok &= condition;
 }
 
-Check(stock.Length == Image.BankASize, $"stock bank A is {stock.Length} bytes");
-Check(Convert.ToHexString(SHA256.HashData(stock)).ToLowerInvariant() == Image.StockSha256,
-    $"stock bank A matches {Image.StockSha256}");
+Check(stock.Length == layout.BankASize, $"stock bank A is {stock.Length} bytes");
+Check(Convert.ToHexString(SHA256.HashData(stock)).ToLowerInvariant() == U2cWireless.StockSha256,
+    $"stock bank A matches {U2cWireless.StockSha256}");
 
 var builtSha = Convert.ToHexString(SHA256.HashData(built)).ToLowerInvariant();
 Check(built.Length == ExpectedSize, $"built image is {built.Length} bytes (expected {ExpectedSize})");
@@ -63,13 +68,17 @@ if (args.Length > 1)
     }
 }
 
-var builtState = Recipes.Identify(built);
+var builtState = catalog.Identify(built);
 Check(builtState.Known, "built image is recognised");
 Check(string.Join(",", builtState.Recipes) == "ble_interval,bt_rumble,bt_xbox",
     $"built image has {string.Join(", ", builtState.Recipes)}");
 
-var stockState = Recipes.Identify(stock);
+var stockState = catalog.Identify(stock);
 Check(stockState.Known && stockState.Recipes.Count == 0, "stock bank A is recognised as original 1.09");
+
+// the guide must stay out of the registry, or the GUI would offer a placeholder model
+var template = TemplateProfile.Create();
+Check(ProfileRegistry.Default.Profiles.All(p => p.Id != template.Id), "template profile stays unregistered");
 
 Console.WriteLine(ok ? "PARITY OK" : "PARITY FAILED");
 return ok ? 0 : 1;
