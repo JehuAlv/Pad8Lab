@@ -1,0 +1,59 @@
+name: Bug report
+description: Something went wrong in Pad8Lab.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not attach a controller backup. Backups contain unit-specific calibration and Bluetooth
+        pairing keys. Share the Activity log instead; it never includes those keys.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: The steps you followed, what you expected and what you saw instead.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Pad8Lab version
+      description: Shown next to the app name and in the title bar.
+    validations:
+      required: true
+  - type: dropdown
+    id: model
+    attributes:
+      label: Controller
+      options:
+        - 8BitDo Ultimate 2C Wireless (firmware 1.09)
+        - Another 8BitDo model (not supported yet)
+    validations:
+      required: true
+  - type: dropdown
+    id: connection
+    attributes:
+      label: Connection
+      options:
+        - USB-C cable
+        - Update mode (hold L1 + R1 and plug the cable)
+        - Bluetooth
+        - 2.4 GHz dongle
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Activity log
+      description: Copy the lines from the Activity log at the bottom of the window.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before posting
+      options:
+        - label: I did not attach a controller backup or a full firmware image.
+          required: true
+        - label: I read SAFEGUARDS.md and the recovery section of the README.
+          required: true

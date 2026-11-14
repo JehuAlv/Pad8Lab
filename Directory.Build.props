@@ -1,0 +1,12 @@
+<Project>
+
+  <PropertyGroup>
+    <Version>1.1.0</Version>
+    <Company>JehuAlv</Company>
+    <Authors>JehuAlv</Authors>
+    <Copyright>Copyright (C) 2026 JehuAlv. GPL-3.0-or-later.</Copyright>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/JehuAlv/Pad8Lab</RepositoryUrl>
+  </PropertyGroup>
+
+</Project>

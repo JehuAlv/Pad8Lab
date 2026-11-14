@@ -1,0 +1,38 @@
+name: Feature request
+description: Suggest a feature or a new controller model.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like
+      description: Describe the feature and the problem it solves.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - New controller model
+        - Firmware tweak
+        - Windows app
+        - Documentation
+        - Build, tests or tooling
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Additional details
+      description: |
+        For a new controller model, include the model name, firmware version, VID/PID and what the
+        controller does today on Windows. Do not attach a full backup or a vendor firmware image.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before posting
+      options:
+        - label: I read the profiles guide in src/Pad8Lab.Core/Profiles/README.md.
+          required: true

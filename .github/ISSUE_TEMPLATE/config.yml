@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Safety and safeguards
+    url: https://github.com/JehuAlv/Pad8Lab/blob/main/SAFEGUARDS.md
+    about: Every check Pad8Lab makes before it writes to a controller.
+  - name: Report a security issue
+    url: https://github.com/JehuAlv/Pad8Lab/security/advisories/new
+    about: Report vulnerabilities privately instead of opening a public issue.
