@@ -24,6 +24,7 @@ Run the checks that match your change:
 ```sh
 # always
 dotnet build Pad8Lab.slnx -c Release
+dotnet test tests/Pad8Lab.Core.Tests/Pad8Lab.Core.Tests.csproj -c Release
 
 # if you touched the firmware builder, the tweak table or a profile
 dotnet run --project tests/ParityCheck/ParityCheck.csproj -c Release -- path\to\stock-backup.bin
@@ -67,7 +68,8 @@ A profile that is not registered is invisible in the app, so work in progress is
 
 - One topic per commit. The summary says what changed for the user.
 - Pull requests should include the build result and, when relevant, the parity result.
-- CI must pass. The workflow only builds; hardware tests stay manual because they need a controller.
+- CI must pass. The workflow builds the solution and runs the unit tests; hardware tests stay manual
+  because they need a controller.
 - By contributing you agree to license your work under GPL-3.0-or-later.
 
 ## Releasing

@@ -24,3 +24,6 @@ jobs:
 
       - name: Build the solution
         run: dotnet build Pad8Lab.slnx -c Release
+
+      - name: Run the tests
+        run: dotnet test tests/Pad8Lab.Core.Tests/Pad8Lab.Core.Tests.csproj -c Release --no-build

@@ -5,6 +5,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/HardwareCheck/HardwareCheck.csproj" />
+    <Project Path="tests/Pad8Lab.Core.Tests/Pad8Lab.Core.Tests.csproj" />
     <Project Path="tests/ParityCheck/ParityCheck.csproj" />
   </Folder>
 </Solution>

@@ -36,7 +36,7 @@ The tweaks are small edits to the firmware that runs **inside the controller**. 
 - **Windows 11** (x64).
 - A **USB-C data cable** for the one-time flash. Bluetooth cannot flash the controller.
 - To run the released app, nothing else: it is a single self-contained `.exe`.
-- To build it, the **.NET 10 SDK**. The app, the flashing core and the signing tool are written in **100% C#/.NET**.
+- To build it, the **.NET 10 SDK**. The app and the flashing core are written in **100% C#/.NET**.
 
 ## How to use
 
@@ -98,6 +98,7 @@ src/Pad8Lab.Core/Ops/       backup, probe, plan, patch and restore
 src/Pad8Lab.Core/Profiles/  per-model profiles; only registered profiles appear in the app
 src/Pad8Lab.Core/Protocol/  app and bootloader protocols
 src/Pad8Lab/                the WPF desktop app (Setup and About tabs)
+tests/Pad8Lab.Core.Tests/   unit tests for the parts that need no controller
 tests/ParityCheck/          proves the C# builder matches the validated reference image
 tests/HardwareCheck/        runs devices, backup and check from the console
 docs/                       screenshots and architecture notes
@@ -120,6 +121,15 @@ cd Pad8Lab
 
 dotnet build src/Pad8Lab/Pad8Lab.csproj -c Release
 dotnet run --project src/Pad8Lab/Pad8Lab.csproj
+```
+
+### Run the tests
+
+The unit tests cover the parts that need no hardware: the layout checks, the profile registry, the HID
+mode matching, the tweak table and the plan ranges. They run on every push in CI.
+
+```sh
+dotnet test tests/Pad8Lab.Core.Tests/Pad8Lab.Core.Tests.csproj -c Release
 ```
 
 ### Run it headless

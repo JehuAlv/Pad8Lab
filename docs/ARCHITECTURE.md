@@ -9,6 +9,7 @@ knowledge about one controller model.
 | --- | --- | --- |
 | `src/Pad8Lab.Core` | class library | Discovery, backup, planning, writing and restoring. Has no UI and no command-line parsing. |
 | `src/Pad8Lab` | WPF app | The window, the log, the disclaimer gate and the live controller state. Calls only `FlashService`. |
+| `tests/Pad8Lab.Core.Tests` | xUnit | Hardware-free invariants: layout, registry, mode matching, tweak table and plan ranges. |
 | `tests/ParityCheck` | console | Proves the C# firmware builder matches the validated reference image. |
 | `tests/HardwareCheck` | console | Runs devices, backup and check from a terminal. Never writes unless asked. |
 
@@ -65,8 +66,11 @@ guide. `ProfileRegistry.Default` is the only list that determines what the app s
 
 ## Testing
 
+- `Pad8Lab.Core.Tests` covers everything that needs no controller: `FlashLayout.Validate` and
+  `SameUnit`, the profile registry, the HID mode matching, the tweak table and its stock hashes, and
+  `Plan.CheckRanges`.
 - `ParityCheck` needs a full backup of a stock unit. It rebuilds the firmware and compares the size,
   SHA-256, recognised tweaks and the stock hash against the validated reference image.
 - `HardwareCheck` exercises the read-only paths on real hardware.
-- CI builds the whole solution on Windows on every push and pull request. Hardware tests stay manual
-  because backups contain unit-specific data and must never be committed.
+- CI builds the whole solution and runs the unit tests on Windows on every push and pull request.
+  Hardware tests stay manual because backups contain unit-specific data and must never be committed.
