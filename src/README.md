@@ -3,7 +3,7 @@
 A small Windows desktop app (WPF, .NET 10) that flashes **custom firmware profiles** onto 8BitDo
 controllers. The first supported model is the **8BitDo Ultimate 2C Wireless**, which gets real
 **rumble over Bluetooth** and a **native Xbox identity** on Windows 11. The app is the graphical front end
-for the C# flashing core in [`../Pad8Lab.Core`](../Pad8Lab.Core).
+for the C# flashing core in [`Pad8Lab.Core`](Pad8Lab.Core).
 
 ## What it does
 
@@ -36,7 +36,7 @@ dotnet run --project src/Pad8Lab/Pad8Lab.csproj
 - `Pad8Lab.csproj` - the WPF project (net10.0-windows).
 - `App.xaml`, `App.xaml.cs` - application entry point.
 - `MainWindow.xaml`, `MainWindow.xaml.cs` - the Setup and About tabs.
-- `../Pad8Lab.Core` - the flashing core, a separate class library.
+- `Pad8Lab.Core` - the flashing core, a separate class library.
 
 ## License
 
