@@ -471,7 +471,7 @@
                                     <CheckBox x:Name="DisclaimerCheck" AutomationProperties.AutomationId="DisclaimerCheck" Grid.Row="2" Grid.ColumnSpan="3"
                                               Style="{StaticResource DisclaimerCheck}" Margin="0,0,0,1"
                                               Checked="Disclaimer_Changed" Unchecked="Disclaimer_Changed">
-                                        <TextBlock TextWrapping="Wrap" FontSize="12">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12" x:Name="DisclaimerText">
                                             I understand this modifies 8BitDo's firmware and probably voids the warranty,
                                             and that my backup can undo it.
                                         </TextBlock>
@@ -606,8 +606,8 @@
                             <Border Style="{StaticResource Card}" Padding="18,16" Margin="0,10,0,0">
                                 <StackPanel>
                                     <TextBlock Text="If a write is interrupted" Style="{StaticResource H2}"/>
-                                    <TextBlock Style="{StaticResource Body}" Margin="0,7,0,0"
-                                               Text="The bootloader is never written, so recovery is always possible over USB: turn the controller fully off, hold L1 + R1 and plug in the cable. It starts in update mode (the LED blinks white) and Restore works from there. Unplugging the cable does not leave update mode; holding Home for about 12 seconds with the cable out does."/>
+                                    <TextBlock x:Name="RecoveryText" Style="{StaticResource Body}" Margin="0,7,0,0"
+                                               Text="The bootloader is never written, so recovery is always possible over USB."/>
                                 </StackPanel>
                             </Border>
 

@@ -186,6 +186,10 @@ public partial class MainWindow : Window
             : $"Adds {Plan.Listed(titles)}. Writes only those regions, then verifies them.";
         RestoreHelpText.Text =
             $"Restore puts back the backup that still holds the original firmware {profile.Primary.Version:0.00}.";
+        DisclaimerText.Text =
+            $"I understand this modifies {profile.Vendor}'s firmware and probably voids the warranty, and that my backup can undo it.";
+        RecoveryText.Text = "The bootloader is never written, so recovery is always possible over USB. " +
+                            profile.BootHelp + " Restore works from there.";
     }
 
     // maps the device modes onto the status pill, the connection row and the buttons
