@@ -1,7 +1,7 @@
 <Window x:Class="Pad8Lab.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Pad8Lab - Bluetooth rumble &amp; XInput for the 8BitDo Ultimate 2C"
+        Title="Pad8Lab - custom firmware for 8BitDo controllers"
         Width="1020" Height="810" MinWidth="900" MinHeight="620"
         Background="{StaticResource BgBrush}" Foreground="{StaticResource TextBrush}"
         WindowStartupLocation="CenterScreen"
@@ -45,7 +45,7 @@
                     </Border>
                 </StackPanel>
                 <TextBlock Style="{StaticResource Muted}" Margin="0,1,0,0"
-                           Text="Bluetooth rumble and native Xbox/XInput for the 8BitDo Ultimate 2C Wireless"/>
+                           Text="Custom firmware for 8BitDo controllers. Ultimate 2C Wireless supported today."/>
             </StackPanel>
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
@@ -534,7 +534,7 @@
                                 <StackPanel>
                                     <TextBlock Text="What this does" Style="{StaticResource H2}"/>
                                     <TextBlock Style="{StaticResource Body}" Margin="0,7,0,0"
-                                               Text="Out of the box, over Bluetooth, the Ultimate 2C Wireless is a plain HID gamepad on Windows: it does not rumble and many games do not recognise it. This app flashes 8BitDo's own firmware with two small edits, so the controller reports as an Xbox Series X|S pad (045e:0b13) and vibrates over Bluetooth. The change lives inside the controller, so after one flash it works on any Windows PC, with no drivers, no dongle and no virtual pad."/>
+                                               Text="Pad8Lab flashes custom firmware profiles onto 8BitDo controllers. A profile holds the model's flash map, firmware catalog and update protocol, so new models can be added without changing the flashing core. The first registered profile is the Ultimate 2C Wireless: over Bluetooth it is a plain HID gamepad on Windows, so the app flashes 8BitDo's own firmware with two small edits, and the controller reports as an Xbox Series X|S pad (045e:0b13) and vibrates over Bluetooth. The change lives inside the controller, so after one flash it works on any Windows PC, with no drivers, no dongle and no virtual pad."/>
 
                                     <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
                                         <Border Background="#16261F" CornerRadius="9" Padding="11,8" Margin="0,0,8,0">

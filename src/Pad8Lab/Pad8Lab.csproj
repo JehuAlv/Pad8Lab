@@ -8,13 +8,9 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>Pad8Lab</AssemblyName>
     <RootNamespace>Pad8Lab</RootNamespace>
-    <Version>1.1.0</Version>
     <Product>Pad8Lab</Product>
     <AssemblyTitle>Pad8Lab</AssemblyTitle>
-    <Company>JehuAlv</Company>
-    <Authors>JehuAlv</Authors>
-    <Copyright>Copyright (C) 2026 JehuAlv. GPL-3.0-or-later.</Copyright>
-    <Description>Rumble over Bluetooth and native Xbox (XInput) for the 8BitDo Ultimate 2C Wireless on Windows.</Description>
+    <Description>Custom firmware for 8BitDo controllers, starting with Bluetooth rumble and native Xbox (XInput) on the Ultimate 2C Wireless.</Description>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>

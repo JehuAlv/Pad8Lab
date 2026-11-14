@@ -106,7 +106,7 @@ internal static class Program
             Signs and verifies the published executable with signtool.
 
             Usage:
-              dotnet run --project scripts/SignTool -- [options]
+              dotnet run --project tools/SignTool -- [options]
 
             Options:
               --file <exe>          file to sign (default: newest artifacts/Pad8Lab-*-win-x64.exe)

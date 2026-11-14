@@ -4,7 +4,7 @@ This project would not exist without the work of others. Please keep these credi
 
 ## The flashing core (GPL-3.0-or-later)
 
-The flashing core in [`app/Pad8Lab.Core`](app/Pad8Lab.Core) is a **C# port** of the **U2C Firmware Toolkit** by **Carlos Browne F.**, used under the **GNU General Public License v3.0 or later**:
+The flashing core in [`src/Pad8Lab.Core`](src/Pad8Lab.Core) is a **C# port** of the **U2C Firmware Toolkit** by **Carlos Browne F.**, used under the **GNU General Public License v3.0 or later**:
 
 - **carlosbrownef-source/8bitdo-ultimate-2c-toolkit** — https://github.com/carlosbrownef-source/8bitdo-ultimate-2c-toolkit
 

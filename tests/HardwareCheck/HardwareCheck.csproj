@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\app\Pad8Lab.Core\Pad8Lab.Core.csproj" />
+    <ProjectReference Include="..\..\src\Pad8Lab.Core\Pad8Lab.Core.csproj" />
   </ItemGroup>
 
 </Project>

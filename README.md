@@ -1,10 +1,10 @@
-# Pad8Lab — Bluetooth Rumble & XInput for the 8BitDo Ultimate 2C Wireless
+# Pad8Lab — custom firmware for 8BitDo controllers
 
-**Convert your 8BitDo Ultimate 2C Wireless to XInput over Bluetooth on Windows 11**: real **rumble over Bluetooth** and a **native Xbox controller** identity, with no drivers, no dongle and no virtual pad.
+**Pad8Lab flashes custom firmware profiles onto 8BitDo controllers.** The first supported model is the **8BitDo Ultimate 2C Wireless**, which becomes a **native Xbox controller with real rumble over Bluetooth on Windows 11**: no drivers, no dongle and no virtual pad.
 
 Out of the box, over Bluetooth, the Ultimate 2C Wireless is a plain HID gamepad on Windows: it does not rumble, and many games do not recognise it. This app flashes 8BitDo's **own** firmware with two small tweaks, so the controller presents itself as an **Xbox Series X|S** pad and **vibrates over Bluetooth**. The change lives inside the controller, so after one flash it works on any Windows PC.
 
-Pad8Lab is built around controller profiles: the Ultimate 2C Wireless is the only model registered today, and more models can be added without rewriting the flashing core.
+Support is profile-based: **only the Ultimate 2C Wireless is registered today**, and a new controller means a new profile, not a rewrite of the flashing core.
 
 > **Use at your own risk.** Flashing modified firmware probably voids the controller's warranty. It is reversible (your backup restores the original firmware), but it is not risk-free. Read the [disclaimer](#safety-and-disclaimer) before you start. This project is **not affiliated with or endorsed by 8BitDo**.
 
@@ -16,7 +16,7 @@ Pad8Lab is built around controller profiles: the Ultimate 2C Wireless is the onl
 
 <img src="docs/screenshots/about.png" alt="What the app does, the controller state and what to do with the SmartScreen warning" width="860">
 
-## What it does
+## What it does for the Ultimate 2C Wireless
 
 | Feature | What it changes |
 | --- | --- |
@@ -86,17 +86,17 @@ SmartScreen only checks files that carry that tag, so this copy opens without th
 
 All of them verify your identity, so none is free. A self-signed or test certificate keeps the publisher unknown.
 
-When you have a certificate, the C# signing tool in `scripts/SignTool` signs the single-file build with SHA-256 and an RFC 3161 timestamp, then verifies the result:
+When you have a certificate, the C# signing tool in `tools/SignTool` signs the single-file build with SHA-256 and an RFC 3161 timestamp, then verifies the result:
 
 ```powershell
 # with a .pfx file
-dotnet run --project scripts/SignTool -- --pfx .\cert.pfx --password "the password"
+dotnet run --project tools/SignTool -- --pfx .\cert.pfx --password "the password"
 
 # or with a certificate already in the Windows certificate store
-dotnet run --project scripts/SignTool -- --thumbprint 0123456789ABCDEF0123456789ABCDEF01234567
+dotnet run --project tools/SignTool -- --thumbprint 0123456789ABCDEF0123456789ABCDEF01234567
 
 # check a file without signing it
-dotnet run --project scripts/SignTool -- --verify-only
+dotnet run --project tools/SignTool -- --verify-only
 ```
 
 It needs `signtool.exe` from the Windows SDK (the *Signing Tools* component). Signing changes the file, so recalculate the SHA-256 and upload the signed executable again when you publish.
@@ -104,21 +104,27 @@ It needs `signtool.exe` from the Windows SDK (the *Signing Tools* component). Si
 ## Project layout
 
 ```
-app/Pad8Lab.Core/          the flashing core, 100% C# (HID, protocols, tweaks, backup, patch, restore)
-app/Pad8Lab.Core/Profiles/ per-model profiles; only registered profiles appear in the app
-app/Pad8Lab.Core/Profiles/README.md  how to add a new controller model
-app/Pad8Lab/               the WPF desktop app (Setup and About tabs)
-tests/ParityCheck/           proves the C# builder matches the validated reference image
-tests/HardwareCheck/         runs devices, backup and check from the console
+src/Pad8Lab.Core/           the flashing core, 100% C# (HID, protocols, tweaks, backup, patch, restore)
+src/Pad8Lab.Core/Firmware/  flash layout, firmware catalogs, tweak blobs
+src/Pad8Lab.Core/Hid/       Win32 HID discovery and transport
+src/Pad8Lab.Core/Ops/       backup, probe, plan, patch and restore
+src/Pad8Lab.Core/Profiles/  per-model profiles; only registered profiles appear in the app
+src/Pad8Lab.Core/Protocol/  app and bootloader protocols
+src/Pad8Lab/                the WPF desktop app (Setup and About tabs)
+tests/ParityCheck/          proves the C# builder matches the validated reference image
+tests/HardwareCheck/        runs devices, backup and check from the console
+tools/SignTool/             signs and verifies the published executable
+docs/                       screenshots and architecture notes
+.github/                    CI workflow, issue forms and the pull request template
 ```
 
-`Pad8Lab.Core` uses Win32 HID calls directly, with no external packages.
+`Pad8Lab.Core` uses Win32 HID calls directly, with no external packages. Read [the architecture notes](docs/ARCHITECTURE.md) for how the layers fit together.
 
 ### Adding another controller model
 
 The core is built around `ControllerProfile`: model identity, flash layout, firmware targets, update protocol and tweak catalog. `ProfileRegistry.Default` is the only place that decides which models the app supports, and today it registers only the Ultimate 2C Wireless.
 
-`app/Pad8Lab.Core/Profiles/TemplateProfile.cs` is a non-registered worked example with placeholder values. It is compiled but never shown in the GUI, so it cannot be selected by users. Read [the profiles guide](app/Pad8Lab.Core/Profiles/README.md) before adding a model.
+`src/Pad8Lab.Core/Profiles/TemplateProfile.cs` is a non-registered worked example with placeholder values. It is compiled but never shown in the GUI, so it cannot be selected by users. Read [the profiles guide](src/Pad8Lab.Core/Profiles/README.md) before adding a model.
 
 ## Build and run
 
@@ -126,8 +132,8 @@ The core is built around `ControllerProfile`: model identity, flash layout, firm
 git clone https://github.com/JehuAlv/Pad8Lab
 cd Pad8Lab
 
-dotnet build app/Pad8Lab/Pad8Lab.csproj -c Release
-dotnet run --project app/Pad8Lab/Pad8Lab.csproj
+dotnet build src/Pad8Lab/Pad8Lab.csproj -c Release
+dotnet run --project src/Pad8Lab/Pad8Lab.csproj
 ```
 
 ### Run it headless
@@ -152,6 +158,10 @@ dotnet run --project tests/ParityCheck/ParityCheck.csproj -c Release -- controll
 ```
 
 It rebuilds the firmware from the backup and checks the size, the SHA-256, the recognised tweaks and the stock hash. If you also pass an image produced by the original core, it compares every byte.
+
+## Contributing
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) for the build, test and release commands, and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how the layers fit together. Security problems go through [SECURITY.md](SECURITY.md), never a public issue. The project follows the [Contributor Covenant](CODE_OF_CONDUCT.md).
 
 ## Safety and disclaimer
 

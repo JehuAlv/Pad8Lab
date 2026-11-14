@@ -1,7 +1,8 @@
 # Pad8Lab (Windows app)
 
-A small Windows desktop app (WPF, .NET 10) that gives the **8BitDo Ultimate 2C Wireless** real
-**rumble over Bluetooth** and a **native Xbox identity** on Windows 11. It is the graphical front end
+A small Windows desktop app (WPF, .NET 10) that flashes **custom firmware profiles** onto 8BitDo
+controllers. The first supported model is the **8BitDo Ultimate 2C Wireless**, which gets real
+**rumble over Bluetooth** and a **native Xbox identity** on Windows 11. The app is the graphical front end
 for the C# flashing core in [`../Pad8Lab.Core`](../Pad8Lab.Core).
 
 ## What it does
@@ -26,8 +27,8 @@ Requires only the **.NET 10 SDK**.
 
 ```sh
 # from the repository root
-dotnet build app/Pad8Lab/Pad8Lab.csproj -c Release
-dotnet run --project app/Pad8Lab/Pad8Lab.csproj
+dotnet build src/Pad8Lab/Pad8Lab.csproj -c Release
+dotnet run --project src/Pad8Lab/Pad8Lab.csproj
 ```
 
 ## Files
