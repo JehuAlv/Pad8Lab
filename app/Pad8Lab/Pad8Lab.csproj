@@ -8,7 +8,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>Pad8Lab</AssemblyName>
     <RootNamespace>Pad8Lab</RootNamespace>
-    <Version>1.0.3</Version>
+    <Version>1.1.0</Version>
     <Product>Pad8Lab</Product>
     <AssemblyTitle>Pad8Lab</AssemblyTitle>
     <Company>JehuAlv</Company>
