@@ -8,8 +8,6 @@ namespace Pad8Lab.Core;
 public sealed class FlashService
 {
     private const string Restarted = "The controller restarted with its new firmware.";
-    private const string Replug =
-        "The controller hasn't come back yet: unplug it, hold Home for about 12 seconds until it turns off, then connect it again.";
     private const string Installed =
         "Installed. {} If you changed how the controller connects, remove it in Windows Settings \u2192 Bluetooth & devices and pair it again.";
     private const string Restored =
@@ -28,30 +26,35 @@ public sealed class FlashService
 
     public string Store { get; }
 
+    public IReadOnlyList<ControllerProfile> Profiles => _registry.Profiles;
+
     public FlashService(string? store = null, ProfileRegistry? registry = null)
     {
         Store = store ?? AppState.DefaultStore();
         _registry = registry ?? ProfileRegistry.Default;
     }
 
-    // the disclaimer names every registered model, so a new profile needs no change here
-    private string DisclaimerHelp =>
+    private static string DisclaimerHelpFor(ControllerProfile profile) =>
         "Read DISCLAIMER.md first. There's no warranty. Installing modified firmware probably voids the controller's warranty. " +
-        string.Join(" or ", _registry.Profiles.Select(p => p.Disclaimer));
+        profile.Disclaimer;
 
     public IReadOnlyList<Found> Find() => Devices.Find(_registry);
 
-    /// <summary>The tweaks this model offers; falls back to the first registered profile when nothing is connected.</summary>
-    public IReadOnlyList<string> SuggestedTweaks()
+    /// <summary>The tweaks the connected model offers, or none when nothing is connected.</summary>
+    public IReadOnlyList<string> SuggestedTweaks(string? profileId = null)
     {
-        var found = Find().FirstOrDefault(f => ControllerProfile.IsUsbMode(f.Mode));
-        return (found?.Profile ?? _registry.Profiles[0]).SuggestedTweaks;
+        var found = Find().FirstOrDefault(f => ControllerProfile.IsUsbMode(f.Mode)
+            && (profileId is null || f.Profile.Id == profileId));
+        return found?.Profile.SuggestedTweaks ?? Array.Empty<string>();
     }
 
+    /// <summary>Readable backups stored for one model.</summary>
+    public int BackupCount(ControllerProfile profile) => BackupFile.Count(profile, Store);
+
     /// <summary>Full read-only backup over the cable or in update mode.</summary>
-    public void Backup(Action<string> log, Action<string, int, int> progress) => WithLock(() =>
+    public void Backup(Action<string> log, Action<string, int, int> progress, string? profileId = null) => WithLock(() =>
     {
-        var device = Pick(DeviceMode.Cable, DeviceMode.Cable360, DeviceMode.Boot);
+        var device = Pick(profileId, DeviceMode.Cable, DeviceMode.Cable360, DeviceMode.Boot);
         var protocol = device.Profile.Protocol;
         using var channel = Open(device.Info, protocol.IsBoot(device.Mode) ? protocol.BootReportId : protocol.AppReportId);
         var backup = BackupFile.Take(device.Profile, channel, device.Mode, Store, progress);
@@ -64,10 +67,11 @@ public sealed class FlashService
 
     /// <summary>Check (write: false) or install the chosen tweaks.</summary>
     public void Install(IReadOnlyList<string> tweaks, bool write, bool disclaimerAccepted,
-        Action<string> log, Action<string, int, int> progress, Action<Plan>? planned = null) => WithLock(() =>
+        Action<string> log, Action<string, int, int> progress, Action<Plan>? planned = null,
+        string? profileId = null) => WithLock(() =>
     {
-        NeedAccept(write, disclaimerAccepted);
-        var device = Pick(DeviceMode.Boot, DeviceMode.Cable, DeviceMode.Cable360);
+        var device = Pick(profileId, DeviceMode.Boot, DeviceMode.Cable, DeviceMode.Cable360);
+        NeedAccept(device.Profile, write, disclaimerAccepted);
         LogFile.Write(Store, write ? "command patch" : "command check");
 
         var keys = tweaks.Where(k => k.Length > 0).ToList();
@@ -93,12 +97,13 @@ public sealed class FlashService
 
     /// <summary>Restore this unit's newest recognised backup.</summary>
     public void Restore(string source, bool write, bool forceUnknown, bool disclaimerAccepted,
-        Action<string> log, Action<string, int, int> progress, Action<Plan>? planned = null) => WithLock(() =>
+        Action<string> log, Action<string, int, int> progress, Action<Plan>? planned = null,
+        string? profileId = null) => WithLock(() =>
     {
-        NeedAccept(write, disclaimerAccepted);
         if (source != "backup")
             throw new OpException("This app restores the controller's own backup.");
-        var device = Pick(DeviceMode.Boot, DeviceMode.Cable, DeviceMode.Cable360);
+        var device = Pick(profileId, DeviceMode.Boot, DeviceMode.Cable, DeviceMode.Cable360);
+        NeedAccept(device.Profile, write, disclaimerAccepted);
         LogFile.Write(Store, "command restore");
 
         Plan MakePlan(IChannel channel, string mode)
@@ -196,10 +201,13 @@ public sealed class FlashService
             }
         }
 
-        var cameBack = restart && Back();
+        var cameBack = restart && Back(profile);
         if (wrote)
-            log(doneTemplate.Replace("{}", cameBack ? Restarted : Replug));
+            log(doneTemplate.Replace("{}", cameBack ? Restarted : ReplugFor(profile)));
     }
+
+    private static string ReplugFor(ControllerProfile profile) =>
+        $"The controller hasn't come back yet: unplug it, {profile.PowerOffHelp}, then connect it again.";
 
     // writes the plan unless it is a check or changes nothing; returns whether it wrote
     private static bool WritePlan(ControllerProfile profile, bool write, IChannel? channel, Plan plan, Action<string> log,
@@ -231,16 +239,16 @@ public sealed class FlashService
             device.Profile.Protocol.EnterUpdateMode(channel);
         }
 
-        var boot = WaitForMode(device.Profile.Protocol.BootMode, BootWait);
+        var boot = WaitForMode(device.Profile.Protocol.BootMode, BootWait, device.Profile);
         return boot?.Info ?? throw new OpException(NotEntered + device.Profile.BootHelp);
     }
 
-    private Found? WaitForMode(string mode, int seconds)
+    private Found? WaitForMode(string mode, int seconds, ControllerProfile profile)
     {
         var end = DateTime.UtcNow.AddSeconds(seconds);
         while (DateTime.UtcNow < end)
         {
-            var found = Find().FirstOrDefault(f => f.Mode == mode);
+            var found = Find().FirstOrDefault(f => f.Mode == mode && f.Profile.Id == profile.Id);
             if (found is not null)
                 return found;
             Thread.Sleep(TimeSpan.FromSeconds(Step));
@@ -249,26 +257,41 @@ public sealed class FlashService
     }
 
     // whether the controller came back by cable after the bootloader restarted it
-    private bool Back()
+    private bool Back(ControllerProfile profile)
     {
         var end = DateTime.UtcNow.AddSeconds(BackWait);
         while (DateTime.UtcNow < end)
         {
-            if (Find().Any(f => ControllerProfile.IsCableMode(f.Mode)))
+            if (Find().Any(f => f.Profile.Id == profile.Id && ControllerProfile.IsCableMode(f.Mode)))
                 return true;
             Thread.Sleep(TimeSpan.FromSeconds(Step));
         }
         return false;
     }
 
-    private Found Pick(params string[] modes)
+    private Found Pick(string? profileId, params string[] modes)
     {
-        var present = Find().Where(f => ControllerProfile.IsUsbMode(f.Mode)).ToList();
+        var all = Find().Where(f => ControllerProfile.IsUsbMode(f.Mode)).ToList();
+        var present = profileId is null ? all : all.Where(f => f.Profile.Id == profileId).ToList();
         if (present.Count > 1)
             throw new OpException("More than one device is connected. Unplug all but one controller.");
-        if (present.Count == 0 || !modes.Contains(present[0].Mode))
+        if (present.Count == 0)
         {
-            if (present.Count > 0 && ControllerProfile.IsDongleMode(present[0].Mode))
+            if (profileId is not null && all.Count > 0)
+            {
+                var profile = _registry.Profiles.FirstOrDefault(p => p.Id == profileId);
+                throw new OpException($"{profile?.Name ?? "That controller"} isn't connected. " +
+                                      $"Connect it with {profile?.CableName ?? "a cable"} and try again.");
+            }
+            if (all.Count > 0 && ControllerProfile.IsDongleMode(all[0].Mode))
+                throw new OpException("That is a wireless adapter, not the controller. Connect the controller by cable.");
+            var help = string.Join(" ", _registry.Profiles.Select(p => p.BootHelp).Distinct());
+            var want = modes.Contains(DeviceMode.Cable) ? "by cable" : "in update mode. " + help;
+            throw new OpException($"No controller found {want}");
+        }
+        if (!modes.Contains(present[0].Mode))
+        {
+            if (ControllerProfile.IsDongleMode(present[0].Mode))
                 throw new OpException("That is a wireless adapter, not the controller. Connect the controller by cable.");
             var help = string.Join(" ", _registry.Profiles.Select(p => p.BootHelp).Distinct());
             var want = modes.Contains(DeviceMode.Cable) ? "by cable" : "in update mode. " + help;
@@ -297,15 +320,15 @@ public sealed class FlashService
         ?? throw new OpException($"None of your backups contains the original firmware {profile.Primary.Version:0.00}. " +
                                  $"Download it from {profile.Vendor}'s server instead.");
 
-    private void NeedAccept(bool write, bool accepted)
+    private void NeedAccept(ControllerProfile profile, bool write, bool accepted)
     {
         if (!write)
             return;
-        if (!AppState.Accepted(Store))
+        if (!AppState.Accepted(Store, profile.Id))
         {
             if (!accepted)
-                throw new OpException("You haven't accepted the disclaimer yet. " + DisclaimerHelp);
-            AppState.Accept(Store);
+                throw new OpException("You haven't accepted the disclaimer yet. " + DisclaimerHelpFor(profile));
+            AppState.Accept(Store, profile.Id);
         }
     }
 

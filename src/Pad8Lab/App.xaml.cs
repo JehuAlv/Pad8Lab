@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Threading;
 using Pad8Lab.Core;
+using Pad8Lab.Core.Profiles;
 
 namespace Pad8Lab;
 
@@ -18,11 +19,12 @@ public partial class App : Application
     private void OnUnhandled(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         WriteCrash(e.Exception);
+        var recovery = string.Join(" ", ProfileRegistry.Default.Profiles.Select(p => p.BootHelp).Distinct());
         MessageBox.Show(
             "Something went wrong and the app has to close.\n\n" + e.Exception.Message +
             "\n\nThe full error was saved to crash.log in the app data folder. " +
-            "Your controller is not left half-written: if a write was interrupted, reconnect the controller by cable, " +
-            "hold L1 + R1 while plugging it in, and use Restore.",
+            "Your controller is not left half-written: if a write was interrupted, reconnect the controller by cable. " +
+            recovery + " Then use Restore.",
             "Pad8Lab", MessageBoxButton.OK, MessageBoxImage.Error);
         e.Handled = true;
         Shutdown(1);

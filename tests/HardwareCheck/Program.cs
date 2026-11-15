@@ -3,10 +3,12 @@ using Pad8Lab.Core;
 // read-only runs of the C# flashing core against a connected controller
 if (args.Length < 1)
 {
-    Console.Error.WriteLine("usage: HardwareCheck <devices|backup|check|restore-check>");
+    Console.Error.WriteLine("usage: HardwareCheck <devices|backup|check|restore-check> [profileId]");
     return 2;
 }
 
+// the optional profile id lets a run name the model instead of discovering it
+var profile = args.Length > 1 ? args[1] : null;
 var service = new FlashService();
 void Log(string line) => Console.WriteLine(line);
 void Progress(string label, int done, int total)
@@ -25,17 +27,17 @@ try
             break;
 
         case "backup":
-            service.Backup(Log, Progress);
+            service.Backup(Log, Progress, profile);
             break;
 
         case "check":
-            service.Install(service.SuggestedTweaks(), write: false, disclaimerAccepted: false,
-                Log, Progress);
+            service.Install(service.SuggestedTweaks(profile), write: false, disclaimerAccepted: false,
+                Log, Progress, profileId: profile);
             break;
 
         case "restore-check":
             service.Restore("backup", write: false, forceUnknown: false, disclaimerAccepted: false,
-                Log, Progress);
+                Log, Progress, profileId: profile);
             break;
 
         default:

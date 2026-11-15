@@ -48,7 +48,7 @@ public static partial class BackupFile
 
         Directory.CreateDirectory(store);
         var path = System.IO.Path.Combine(store,
-            $"controller-{DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture)}.bin");
+            $"{Prefix(profile)}-{DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture)}.bin");
         var suffix = 1;
         while (File.Exists(path))
         {
@@ -81,7 +81,8 @@ public static partial class BackupFile
     {
         if (!Directory.Exists(store))
             return Enumerable.Empty<Backup>();
-        return Directory.GetFiles(store, "controller-*.bin")
+        return Directory.GetFiles(store, "*.bin")
+            .Where(p => IsForProfile(profile, p))
             .OrderByDescending(p => p, StringComparer.Ordinal)
             .Select(p =>
             {
@@ -96,6 +97,24 @@ public static partial class BackupFile
             })
             .Where(b => b is not null)!;
     }
+
+    /// <summary>The filename prefix a profile uses; the old controller-* names still count as legacy.</summary>
+    public static string Prefix(ControllerProfile profile)
+    {
+        var invalid = System.IO.Path.GetInvalidFileNameChars();
+        return new string(profile.Id.Select(c => invalid.Contains(c) ? '_' : c).ToArray());
+    }
+
+    private static bool IsForProfile(ControllerProfile profile, string path)
+    {
+        var name = System.IO.Path.GetFileName(path);
+        return name.StartsWith(Prefix(profile) + "-", StringComparison.OrdinalIgnoreCase)
+               || name.StartsWith("controller-", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>How many backup files in the store belong to this profile; cheap enough for the live UI.</summary>
+    public static int Count(ControllerProfile profile, string store) =>
+        Directory.Exists(store) ? Directory.GetFiles(store, "*.bin").Count(p => IsForProfile(profile, p)) : 0;
 
     /// <summary>Backups in the store taken from this unit (same bootloader and address), newest first.</summary>
     public static IReadOnlyList<Backup> FindBackups(ControllerProfile profile, string store, byte[] bootloader, byte[] mac)
@@ -154,6 +173,6 @@ public static partial class BackupFile
         return null;
     }
 
-    [GeneratedRegex(@"controller-(\d{8}-\d{6})")]
+    [GeneratedRegex(@"-(\d{8}-\d{6})")]
     private static partial Regex BackupName();
 }

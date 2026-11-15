@@ -1,3 +1,6 @@
+using System.Security.Cryptography;
+using System.Text;
+
 namespace Pad8Lab.Core.Ops;
 
 /// <summary>Per-user state: where backups live, whether the disclaimer has been accepted, and the device lock.</summary>
@@ -24,12 +27,30 @@ public static class AppState
         return store;
     }
 
-    public static bool Accepted(string store) => File.Exists(Path.Combine(store, "disclaimer-accepted"));
+    /// <summary>Whether this profile's disclaimer was accepted; the old global file still counts for existing users.</summary>
+    public static bool Accepted(string store, string? profileId = null)
+    {
+        if (File.Exists(Path.Combine(store, AcceptanceFile(profileId))))
+            return true;
+        return profileId is not null && File.Exists(Path.Combine(store, "disclaimer-accepted"));
+    }
 
-    public static void Accept(string store)
+    public static void Accept(string store, string? profileId = null)
     {
         Directory.CreateDirectory(store);
-        File.WriteAllText(Path.Combine(store, "disclaimer-accepted"), "accepted\n");
+        File.WriteAllText(Path.Combine(store, AcceptanceFile(profileId)), "accepted\n");
+    }
+
+    // one acceptance file per profile, with the id reduced to a safe file name
+    // and a short hash so two ids never collapse into the same file
+    private static string AcceptanceFile(string? profileId)
+    {
+        if (string.IsNullOrWhiteSpace(profileId))
+            return "disclaimer-accepted";
+        var invalid = Path.GetInvalidFileNameChars();
+        var safe = new string(profileId.Select(c => invalid.Contains(c) ? '_' : c).ToArray());
+        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(profileId)))[..8].ToLowerInvariant();
+        return $"disclaimer-accepted-{safe}-{hash}";
     }
 
     /// <summary>

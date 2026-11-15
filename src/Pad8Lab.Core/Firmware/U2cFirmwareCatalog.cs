@@ -68,22 +68,22 @@ public sealed class U2cFirmwareCatalog : IFirmwareCatalog
                 Edit(0x17254, Join(new[] { (byte)(Name.Length + 1), (byte)9 }, Name, pad),
                     accepts: new[] { Join(new[] { (byte)(OldName.Length + 1), (byte)9 }, OldName, pad) }),
                 Edit(0xA214, new[] { (byte)(Name.Length + 2), (byte)0xA1 }),
-            }),
+            }, Description: "Makes Windows and games see the controller as an Xbox Series X|S pad over Bluetooth."),
             new("bt_rumble", "Rumble over Bluetooth", new[] { "bt_xbox" }, new[]
             {
                 Edit(0x18390, Blob("rumble.bin").Pad(0x70),
                     accepts: new[] { Blob("rumble02.bin").Pad(0x70), Blob("rumble03.bin").Pad(0x70) }),
-            }),
+            }, Description: "Lets games make the controller vibrate over Bluetooth. Needs the Xbox mode."),
             new("cable_360", "Xbox 360 controller over cable", Array.Empty<string>(), new[]
             {
                 Edit(0x17994, Convert.FromHexString("ffffff")),
                 Edit(0x17998, Convert.FromHexString("5e048e02")),
-            }),
+            }, Description: "Shows the controller as an Xbox 360 pad while it is connected by cable."),
             new("dim_leds", "Dimmer LEDs", Array.Empty<string>(), new[]
             {
                 Edit(0x7738, Blob("led.bin")),
                 Edit(0xA43C, Blob("hook.bin")),
-            }),
+            }, Description: "Lowers the brightness of the status LEDs."),
         };
 
         foreach (var (form, at) in new[] { ("", ""), ("03", "@0.3") })
@@ -118,7 +118,7 @@ public sealed class U2cFirmwareCatalog : IFirmwareCatalog
         list.Add(new Recipe("battery_alerts", "Battery alerts", Array.Empty<string>(), new[]
         {
             Edit(AlertsFlag, new byte[] { 1 }),
-        }, RequiresGroup: "ring"));
+        }, RequiresGroup: "ring", Description: "Shows a low-battery alert on the controller."));
 
         list.Add(new Recipe("settings", "Controller settings", Array.Empty<string>(), new[]
         {
@@ -132,14 +132,14 @@ public sealed class U2cFirmwareCatalog : IFirmwareCatalog
             Edit(0xC910, Blob("hscan.bin")),
             Edit(0x7210, Blob("sram.bin").Pad(0xC0)),
             Edit(SettingsFlag, new byte[] { 1 }),
-        }, RequiresGroup: "ring"));
+        }, RequiresGroup: "ring", Description: "Adds the controller settings menu on the pad."));
 
         list.Add(new Recipe("fixes", "Fixes", Array.Empty<string>(), new[]
         {
             Edit(0xA480, Blob("hidletask.bin")),
             Edit(0xEA88, Blob("hunplug.bin")),
             Edit(0x178CC, Blob("hota.bin")),
-        }, RequiresGroup: "ring"));
+        }, RequiresGroup: "ring", Description: "Applies small fixes to idle, unplug and update handling."));
 
         list.Add(new Recipe("stick_precision", "Finer stick movement", Array.Empty<string>(), new[]
         {
@@ -148,7 +148,7 @@ public sealed class U2cFirmwareCatalog : IFirmwareCatalog
             Edit(0xB220, new[] { (byte)StickThreshold }),
             Edit(0xB238, new[] { (byte)StickThreshold }),
             Edit(0xA2DC, Blob("hsweep.bin")),
-        }, RequiresGroup: "ring"));
+        }, RequiresGroup: "ring", Description: "Makes small stick movements more precise."));
 
         list.Add(new Recipe("cpu_rest", "Processor rest between radio events", Array.Empty<string>(), new[]
         {
@@ -157,12 +157,12 @@ public sealed class U2cFirmwareCatalog : IFirmwareCatalog
             Edit(0x848C, Blob("stall.bin").Pad(0x74)),
             Edit(0xA4AE, Blob("hstall.bin")),
             Edit(RestFlag, new byte[] { 1 }),
-        }, RequiresGroup: "ring"));
+        }, RequiresGroup: "ring", Description: "Lets the processor rest between radio events."));
 
         list.Add(new Recipe("ble_interval", "Bluetooth connection request of 12.5 ms", Array.Empty<string>(), new[]
         {
             Edit(0xA0DE, Convert.FromHexString("0aa00aa100a2c8a3")),
-        }));
+        }, Description: "Keeps the Bluetooth link at a 12.5 ms interval so the pad stays responsive."));
 
         list.Add(new Recipe("fast_scan", "Faster button reading", Array.Empty<string>(), new[]
         {
@@ -170,7 +170,7 @@ public sealed class U2cFirmwareCatalog : IFirmwareCatalog
             Edit(0xC8E2, Convert.FromHexString("13aa")),
             Edit(0xC8E6, Convert.FromHexString("14a2")),
             Edit(0xC640, Convert.FromHexString("0bae")),
-        }));
+        }, Description: "Reads the buttons more often for a faster response."));
 
         return (list.ToDictionary(r => r.Key, StringComparer.Ordinal), list.Select(r => r.Key).ToArray());
     }

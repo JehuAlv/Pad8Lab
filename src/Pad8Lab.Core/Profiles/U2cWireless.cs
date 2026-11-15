@@ -52,5 +52,15 @@ public static class U2cWireless
         },
         new U2cProtocol(),
         suggestedTweaks: new[] { "bt_xbox", "bt_rumble" },
-        implicitTweaks: new[] { "ble_interval" });
+        implicitTweaks: new[] { "ble_interval" },
+        cableName: "USB-C cable",
+        connectHelp: "Flashing only works over USB-C. Wireless modes cannot flash.",
+        reconnectHelp: "Unplug the cable and connect the controller the way you normally use it. " +
+                       "If Windows shows it as a new device, remove it in Settings and pair it again.",
+        powerOffHelp: "hold Home for about 12 seconds until it turns off",
+        supportedOs: "Windows 11",
+        credits: "The flashing core is a C# port of the U2C Firmware Toolkit by Carlos Browne F. " +
+                 "(GPL-3.0-or-later), which provides the bt_xbox and bt_rumble tweaks and the reverse " +
+                 "engineering behind them. The update and bootloader protocols come from " +
+                 "jgus-org/8bitdo-2c-re-flake (MIT). The port was checked byte for byte against the original core.");
 }

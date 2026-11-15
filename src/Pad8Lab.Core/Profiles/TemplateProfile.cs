@@ -55,7 +55,13 @@ public static class TemplateProfile
             },
             protocol: new TemplateProtocol(),
             suggestedTweaks: Array.Empty<string>(),
-            implicitTweaks: Array.Empty<string>());
+            implicitTweaks: Array.Empty<string>(),
+            cableName: "USB cable",
+            connectHelp: "Replace this with how the model connects for a flash.",
+            reconnectHelp: "Replace this with what to do after a flash if the model pairs again.",
+            powerOffHelp: "turn it fully off and on again",
+            supportedOs: "Windows 11",
+            credits: null);
     }
 
     // the catalog is where the model's tweak table, builder and recogniser live

@@ -12,6 +12,7 @@ public static class Devices
     public static IReadOnlyList<Found> Find(ProfileRegistry registry)
     {
         var output = new List<Found>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var device in HidTransport.ListDevices())
         {
             foreach (var profile in registry.Profiles)
@@ -23,9 +24,14 @@ public static class Devices
 
                     var mode = entry.Resolve(device);
                     if (entry.Once && output.Any(f => f.Profile == profile && f.Mode == mode))
-                        continue;
+                        break;
+
+                    // one interface can expose several matching entries; keep the first for each profile and mode
+                    if (!seen.Add($"{device.Path}|{profile.Id}|{mode}"))
+                        break;
 
                     output.Add(new Found(device, mode, profile));
+                    break;
                 }
             }
         }

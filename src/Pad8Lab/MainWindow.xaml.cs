@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Automation;
+using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -27,11 +28,13 @@ public partial class MainWindow : Window
     private bool _busy;
     private bool _probing;
     private bool _cableShown;
+    private bool _buildingModels;
+    private bool _buildingTweaks;
     private IReadOnlyList<string> _modes = Array.Empty<string>();
     private string _deviceSignature = string.Empty;
     private bool _planChanges;
     private int _planDiffBytes;
-    private ControllerProfile _profile = ProfileRegistry.Default.Profiles[0];
+    private ControllerProfile? _profile;
 
     private enum StatusKind
     {
@@ -47,12 +50,10 @@ public partial class MainWindow : Window
         InitializeComponent();
         VersionText.Text = "v" + (Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0");
 
-        // the header and the About tab list whatever the registry supports today
-        var profiles = ProfileRegistry.Default.Profiles;
-        SubtitleText.Text = $"Custom firmware for 8BitDo controllers. {Plan.Listed(profiles.Select(p => p.ShortName))} supported today.";
-        SupportedText.Text = "Supported today: " + string.Join("; ",
-            profiles.Select(p => $"{p.Name} on firmware {p.SupportedVersions}."));
-        ApplyProfileText(_profile);
+        // the window starts neutral and follows whichever model is connected or selected
+        BuildModelPicker();
+        ApplyRegistryText();
+        ApplyNeutralText();
 
         // keeps the window inside the screen on small displays or high scaling
         var work = SystemParameters.WorkArea;
@@ -75,6 +76,68 @@ public partial class MainWindow : Window
             _watchTimer.Start();
         };
         Closed += (_, _) => _watchTimer.Stop();
+    }
+
+    // builds one tab per registered profile instead of hardcoding a model in the window
+    private void BuildModelPicker()
+    {
+        _buildingModels = true;
+        ModelPicker.Children.Clear();
+        foreach (var profile in _service.Profiles)
+        {
+            var button = new RadioButton
+            {
+                Content = profile.ShortName,
+                GroupName = "ControllerModel",
+                Style = (Style)FindResource("TabNav"),
+                Tag = profile,
+                ToolTip = profile.Name,
+                Margin = new Thickness(0, 0, 4, 4),
+            };
+            button.Checked += Model_Checked;
+            ModelPicker.Children.Add(button);
+        }
+        _buildingModels = false;
+    }
+
+    // the header and the About tab describe the registry, not one vendor
+    private void ApplyRegistryText()
+    {
+        var profiles = _service.Profiles;
+        var vendors = profiles.Select(p => p.Vendor).Distinct(StringComparer.Ordinal).ToList();
+        SubtitleText.Text = $"Custom firmware for {Plan.Listed(vendors)} controllers.";
+        SupportedText.Text = "Supported today: " + string.Join("; ",
+            profiles.Select(p => $"{p.Name} on firmware {p.SupportedVersions}."));
+        AboutText.Text =
+            "Pad8Lab flashes custom firmware profiles onto supported controllers. A profile holds the model's " +
+            "flash map, firmware catalog, update protocol and tweaks, so a new model is a new profile rather than " +
+            "a change to the flashing core. The change lives inside the controller: after one flash it works on " +
+            "any Windows PC, with no drivers and no virtual pad.";
+        var credits = profiles.Select(p => p.Credits)
+            .Where(c => !string.IsNullOrWhiteSpace(c))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+        CreditsText.Text = credits.Count > 0
+            ? string.Join(Environment.NewLine + Environment.NewLine, credits)
+            : "Pad8Lab is free and open source under GPL-3.0-or-later. The full credits and the origin of each profile are listed in the repository.";
+        FooterText.Text = "GPL-3.0-OR-LATER  ·  NOT AFFILIATED WITH OR ENDORSED BY THE CONTROLLER VENDORS";
+    }
+
+    private void Model_Checked(object sender, RoutedEventArgs e)
+    {
+        if (_buildingModels || sender is not RadioButton { Tag: ControllerProfile profile, IsChecked: true })
+            return;
+        UseProfile(profile);
+        ApplyDeviceState(_modes);
+    }
+
+    // keeps the radio buttons in sync without firing their Checked handler again
+    private void SelectModel(ControllerProfile? profile)
+    {
+        _buildingModels = true;
+        foreach (var child in ModelPicker.Children.OfType<RadioButton>())
+            child.IsChecked = child.Tag is ControllerProfile candidate && ReferenceEquals(candidate, profile);
+        _buildingModels = false;
     }
 
     // makes the title bar match the dark window on Windows 11
@@ -109,7 +172,7 @@ public partial class MainWindow : Window
             }
 
             _modes = found.Select(f => f.Mode).ToList();
-            UseProfile(found.Select(f => f.Profile).FirstOrDefault());
+            UseProfile(ConnectedProfile(found) ?? _profile);
             ApplyDeviceState(_modes);
         }
         catch (Exception ex)
@@ -134,8 +197,10 @@ public partial class MainWindow : Window
         {
             var found = await Task.Run(() => _service.Find());
             var modes = found.Select(f => f.Mode).ToList();
-            UseProfile(found.Select(f => f.Profile).FirstOrDefault());
-            if (SameModes(modes, _modes))
+            var selected = ConnectedProfile(found) ?? _profile;
+            var sameProfile = ReferenceEquals(selected, _profile);
+            UseProfile(selected);
+            if (SameModes(modes, _modes) && sameProfile)
                 return;
 
             var lines = await Task.Run(() => _service.DescribeDevices());
@@ -164,32 +229,155 @@ public partial class MainWindow : Window
     private static bool SameModes(IReadOnlyList<string> a, IReadOnlyList<string> b) =>
         a.Count == b.Count && a.OrderBy(m => m).SequenceEqual(b.OrderBy(m => m));
 
-    // follows the model that is connected, or the first registered one when nothing is
+    // picks the connected model only when exactly one is present, so two pads don't steal the selection
+    private static ControllerProfile? ConnectedProfile(IEnumerable<Found> found)
+    {
+        var profiles = found.Select(f => f.Profile).Distinct().ToList();
+        return profiles.Count == 1 ? profiles[0] : null;
+    }
+
+    // follows the model that is connected or selected; null means no model chosen yet
     private void UseProfile(ControllerProfile? profile)
     {
-        profile ??= ProfileRegistry.Default.Profiles[0];
         if (ReferenceEquals(profile, _profile))
             return;
         _profile = profile;
-        ApplyProfileText(profile);
+
+        // each model's disclaimer is accepted on its own, so a model change asks again
+        DisclaimerCheck.IsChecked = false;
+        SelectModel(profile);
+        if (profile is null)
+            ApplyNeutralText();
+        else
+            ApplyProfileText(profile);
+        ApplyButtonState();
     }
 
-    // the flow names the model's own tweaks and firmware version
+    // every model-specific sentence in the flow comes from the profile
     private void ApplyProfileText(ControllerProfile profile)
     {
-        var titles = profile.SuggestedTweaks
-            .Where(key => profile.Primary.Catalog.All.ContainsKey(key))
-            .Select(key => profile.Primary.Catalog.All[key].Title)
-            .ToList();
-        InstallHelpText.Text = titles.Count == 0
-            ? "Writes only the firmware regions the tweaks change, then reads them back to verify."
-            : $"Adds {Plan.Listed(titles)}. Writes only those regions, then verifies them.";
+        Title = $"Pad8Lab - {profile.Name}";
+        ConnectTitleText.Text = $"Connect the controller by {profile.CableName}";
+        ConnectHelpText.Text = profile.ConnectHelp;
+        ReconnectHelpText.Text = profile.ReconnectHelp;
         RestoreHelpText.Text =
             $"Restore puts back the backup that still holds the original firmware {profile.Primary.Version:0.00}.";
         DisclaimerText.Text =
             $"I understand this modifies {profile.Vendor}'s firmware and probably voids the warranty, and that my backup can undo it.";
         RecoveryText.Text = "The bootloader is never written, so recovery is always possible over USB. " +
                             profile.BootHelp + " Restore works from there.";
+        ModelHelpText.Text = $"{profile.Name} on firmware {profile.SupportedVersions}. Tested on {profile.SupportedOs}.";
+        BuildTweakList(profile);
+    }
+
+    // neutral copy for the first start and for when nothing is connected
+    private void ApplyNeutralText()
+    {
+        Title = "Pad8Lab - controller firmware toolkit";
+        ConnectTitleText.Text = "Connect the controller by cable";
+        ConnectHelpText.Text = "Choose a supported model or connect a controller. Flashing only works over the cable.";
+        ReconnectHelpText.Text = "Unplug the cable and connect the controller the way you normally use it.";
+        RestoreHelpText.Text = "Restore puts back a backup from this unit.";
+        DisclaimerText.Text =
+            "I understand this modifies the controller's firmware and probably voids the warranty, and that my backup can undo it.";
+        RecoveryText.Text = "The bootloader is never written, so recovery is always possible over USB. " +
+                            "Put the controller in update mode and use Restore.";
+        ModelHelpText.Text = "No controller detected. Connect one by cable or choose a supported model.";
+        InstallHelpText.Text = "Choose a supported model to see its tweaks.";
+        TweakList.Children.Clear();
+        TweakList.Visibility = Visibility.Collapsed;
+    }
+
+    // builds a checkbox per offered tweak, with the profile's own title and description
+    private void BuildTweakList(ControllerProfile profile)
+    {
+        _buildingTweaks = true;
+        TweakList.Children.Clear();
+        var target = profile.Primary;
+        var catalog = target.Catalog;
+        foreach (var key in profile.SuggestedFor(target))
+        {
+            if (!catalog.All.TryGetValue(key, out var recipe))
+                continue;
+
+            var content = new StackPanel();
+            content.Children.Add(new TextBlock
+            {
+                Text = recipe.Title,
+                Style = (Style)FindResource("Body"),
+                FontSize = 12.5,
+                FontWeight = FontWeights.SemiBold,
+            });
+            if (!string.IsNullOrWhiteSpace(recipe.Description))
+            {
+                content.Children.Add(new TextBlock
+                {
+                    Text = recipe.Description,
+                    Style = (Style)FindResource("Muted"),
+                    Margin = new Thickness(0, 2, 0, 0),
+                });
+            }
+
+            var check = new CheckBox
+            {
+                Style = (Style)FindResource("DisclaimerCheck"),
+                Content = content,
+                Tag = key,
+                IsChecked = true,
+                Margin = new Thickness(0, 0, 0, 7),
+            };
+            AutomationProperties.SetName(check, recipe.Title);
+            if (!string.IsNullOrWhiteSpace(recipe.Description))
+                AutomationProperties.SetHelpText(check, recipe.Description);
+            check.Checked += Tweak_Changed;
+            check.Unchecked += Tweak_Changed;
+            TweakList.Children.Add(check);
+        }
+
+        var implicitTitles = profile.ImplicitFor(target)
+            .Where(catalog.All.ContainsKey)
+            .Select(key => catalog.All[key].Title)
+            .ToList();
+        if (implicitTitles.Count > 0)
+        {
+            TweakList.Children.Add(new TextBlock
+            {
+                Text = "Always included: " + Plan.Listed(implicitTitles) + ".",
+                Style = (Style)FindResource("Muted"),
+                Margin = new Thickness(0, 0, 0, 4),
+            });
+        }
+
+        TweakList.Visibility = TweakList.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        _buildingTweaks = false;
+        UpdateTweakHelp(profile);
+    }
+
+    private IReadOnlyList<string> SelectedTweakKeys() =>
+        TweakList.Children.OfType<CheckBox>()
+            .Where(check => check.IsChecked == true && check.Tag is string)
+            .Select(check => (string)check.Tag!)
+            .ToList();
+
+    private void Tweak_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_buildingTweaks || _profile is null)
+            return;
+        UpdateTweakHelp(_profile);
+        ApplyButtonState();
+    }
+
+    // the install card names the checked tweaks and refuses an empty selection
+    private void UpdateTweakHelp(ControllerProfile profile)
+    {
+        var catalog = profile.Primary.Catalog;
+        var titles = SelectedTweakKeys()
+            .Where(catalog.All.ContainsKey)
+            .Select(key => catalog.All[key].Title)
+            .ToList();
+        InstallHelpText.Text = titles.Count == 0
+            ? "Choose at least one tweak to install."
+            : $"Adds {Plan.Listed(titles)}. Writes only those regions, then verifies them.";
     }
 
     // maps the device modes onto the status pill, the connection row and the buttons
@@ -214,7 +402,7 @@ public partial class MainWindow : Window
             ConnectionChipText.Text = "Connected";
             ConnectionChipText.Foreground = Brush("SuccessBrush");
             ConnectionChip.Background = Solid("#16261F");
-            ConnectionText.Text = "USB-C cable";
+            ConnectionText.Text = _profile?.CableName ?? "Cable";
         }
         else if (bluetooth)
         {
@@ -241,13 +429,15 @@ public partial class MainWindow : Window
             ConnectionText.Text = "Not connected";
         }
 
-        var count = BackupCount();
-        BackupText.Text = count switch
-        {
-            0 => "None yet",
-            1 => "1 backup",
-            _ => $"{count} backups",
-        };
+        var count = _profile is null ? 0 : _service.BackupCount(_profile);
+        BackupText.Text = _profile is null
+            ? "No model selected"
+            : count switch
+            {
+                0 => "None yet",
+                1 => "1 backup",
+                _ => $"{count} backups",
+            };
         BackupText.Foreground = count > 0 ? Brush("SuccessBrush") : Brush("MutedBrush");
 
         SetCableVisual(boot || cable);
@@ -293,14 +483,15 @@ public partial class MainWindow : Window
     private void ApplyButtonState()
     {
         var ready = !_busy;
+        var hasProfile = _profile is not null;
         var byCable = _modes.Any(m => ControllerProfile.IsCableMode(m) || m == DeviceMode.Boot);
+        var accepted = DisclaimerCheck.IsChecked == true;
 
-        BackupButton.IsEnabled = ready && byCable;
-        CheckButton.IsEnabled = ready && byCable;
+        BackupButton.IsEnabled = ready && hasProfile && byCable;
+        CheckButton.IsEnabled = ready && hasProfile && byCable;
 
-        var canWrite = ready && byCable && DisclaimerCheck.IsChecked == true;
-        InstallButton.IsEnabled = canWrite;
-        RestoreButton.IsEnabled = canWrite;
+        InstallButton.IsEnabled = ready && hasProfile && byCable && accepted && SelectedTweakKeys().Count > 0;
+        RestoreButton.IsEnabled = ready && hasProfile && byCable && accepted;
     }
 
     // runs one core operation on a background thread and streams its messages into the log
@@ -356,10 +547,11 @@ public partial class MainWindow : Window
     private void ReportPlan(Plan plan)
     {
         var installed = !plan.BankA && plan.OtherSectors.Count == 0;
+        var version = _profile?.Primary.Version ?? 0;
         _planChanges = !installed;
         _planDiffBytes = plan.DiffBytes;
         Dispatcher.BeginInvoke(
-            () => SetFirmware(installed ? "Tweaked" : $"Original {_profile.Primary.Version:0.00}",
+            () => SetFirmware(installed ? "Tweaks installed" : $"Original {version:0.00}",
                 installed ? StatusKind.Ok : StatusKind.Muted));
     }
 
@@ -409,18 +601,6 @@ public partial class MainWindow : Window
         ApplyButtonState();
     }
 
-    private int BackupCount()
-    {
-        try
-        {
-            return Directory.Exists(_service.Store) ? Directory.GetFiles(_service.Store, "controller-*.bin").Length : 0;
-        }
-        catch
-        {
-            return 0;
-        }
-    }
-
     private Brush BrushFor(StatusKind kind) => Brush(kind switch
     {
         StatusKind.Ok => "SuccessBrush",
@@ -458,21 +638,35 @@ public partial class MainWindow : Window
 
     private async void Backup_Click(object sender, RoutedEventArgs e)
     {
+        var profile = _profile;
+        if (profile is null)
+            return;
+
         if (!ConfirmWindow.Ask(this, "Back up the controller?",
                 "This reads the controller's whole flash over the cable and saves it in your app data. " +
                 "It writes nothing. The backup is what Restore uses later, so keep it.",
                 "Back up"))
             return;
 
-        if (await RunAsync("backup", () => _service.Backup(Log, ShowProgress)))
+        if (await RunAsync("backup", () => _service.Backup(Log, ShowProgress, profile.Id)))
             ShowResult(true, "Backup saved. It holds your unit's bootloader check, calibration and pairing data.");
     }
 
     private async void Check_Click(object sender, RoutedEventArgs e)
     {
+        var profile = _profile;
+        if (profile is null)
+            return;
+        var keys = SelectedTweakKeys();
+        if (keys.Count == 0)
+        {
+            ShowResult(false, "Choose at least one tweak to check.");
+            return;
+        }
+
         _planChanges = false;
         var ok = await RunAsync("check", () => _service.Install(
-            _service.SuggestedTweaks(), write: false, disclaimerAccepted: false, Log, ShowProgress, ReportPlan));
+            keys, write: false, disclaimerAccepted: false, Log, ShowProgress, ReportPlan, profile.Id));
         if (!ok)
             return;
 
@@ -483,42 +677,55 @@ public partial class MainWindow : Window
 
     private async void Install_Click(object sender, RoutedEventArgs e)
     {
+        var profile = _profile;
+        if (profile is null)
+            return;
+        var keys = SelectedTweakKeys();
+        if (keys.Count == 0)
+        {
+            ShowResult(false, "Choose at least one tweak to install.");
+            return;
+        }
+
         if (!ConfirmWindow.Ask(this, "Install the tweaks?",
                 "This writes only the firmware regions the tweaks change, reads them back to verify and restarts the controller. " +
-                "Make sure the USB-C cable is connected and that you have a backup.",
+                $"Make sure the {profile.CableName} is connected and that you have a backup.",
                 "Install"))
             return;
 
         var accepted = DisclaimerCheck.IsChecked == true;
         var ok = await RunAsync("install", () => _service.Install(
-            _service.SuggestedTweaks(), write: true,
-            disclaimerAccepted: accepted, Log, ShowProgress, ReportPlan));
+            keys, write: true, disclaimerAccepted: accepted, Log, ShowProgress, ReportPlan, profile.Id));
         if (!ok)
             return;
 
-        SetFirmware("Tweaked", StatusKind.Ok);
+        SetFirmware("Tweaks installed", StatusKind.Ok);
         ShowResult(true, _planChanges
-            ? "Installed and verified. Unplug the cable and reconnect the controller; if Windows shows it as a new device, remove it in Settings and pair it again."
+            ? "Installed and verified. " + profile.ReconnectHelp
             : "The tweaks were already installed, so nothing was written.");
     }
 
     private async void Restore_Click(object sender, RoutedEventArgs e)
     {
+        var profile = _profile;
+        if (profile is null)
+            return;
+
         if (!ConfirmWindow.Ask(this, "Restore the original firmware?",
-                $"This writes the original firmware {_profile.Primary.Version:0.00} from your backup back to the controller, verifies it and undoes the tweaks.",
+                $"This writes the original firmware {profile.Primary.Version:0.00} from your backup back to the controller, verifies it and undoes the tweaks.",
                 "Restore"))
             return;
 
         var accepted = DisclaimerCheck.IsChecked == true;
         var ok = await RunAsync("restore", () => _service.Restore(
             "backup", write: true, forceUnknown: false,
-            disclaimerAccepted: accepted, Log, ShowProgress, ReportPlan));
+            disclaimerAccepted: accepted, Log, ShowProgress, ReportPlan, profile.Id));
         if (!ok)
             return;
 
-        SetFirmware($"Original {_profile.Primary.Version:0.00}", StatusKind.Muted);
+        SetFirmware($"Original {profile.Primary.Version:0.00}", StatusKind.Muted);
         ShowResult(true, _planChanges
-            ? "Original firmware restored and verified. Reconnect the controller; if Windows still shows its old identity, remove it in Settings and pair it again."
+            ? "Original firmware restored and verified. " + profile.ReconnectHelp
             : "The controller already has the original firmware, so nothing was written.");
     }
 

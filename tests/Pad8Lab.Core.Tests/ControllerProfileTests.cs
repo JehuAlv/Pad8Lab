@@ -74,6 +74,48 @@ public sealed class ControllerProfileTests
     public void Unknown_interface_does_not_match() =>
         Assert.Null(U2c.Match(Device(0xFFFF, 0xFFFF, 0xFF7A, "USB", 0)));
 
+    // the model-specific copy the GUI shows comes from the profile
+    [Fact]
+    public void Metadata_describes_the_model()
+    {
+        Assert.Equal("USB-C cable", U2c.CableName);
+        Assert.Equal("Flashing only works over USB-C. Wireless modes cannot flash.", U2c.ConnectHelp);
+        Assert.Contains("Home", U2c.PowerOffHelp);
+        Assert.Equal("Windows 11", U2c.SupportedOs);
+        Assert.False(string.IsNullOrWhiteSpace(U2c.Credits));
+    }
+
+    // a profile without optional metadata falls back to neutral wording
+    [Fact]
+    public void Missing_metadata_falls_back_to_neutral_copy()
+    {
+        var profile = new ControllerProfile(
+            "copy", "Copy", "Copy", "Vendor", "disclaimer", "boot help",
+            U2c.Layout, U2c.Modes, U2c.Firmware, U2c.Protocol);
+
+        Assert.Equal("USB cable", profile.CableName);
+        Assert.Equal("Windows 10 and 11", profile.SupportedOs);
+        Assert.Null(profile.Credits);
+        Assert.False(string.IsNullOrWhiteSpace(profile.ReconnectHelp));
+    }
+
+    // the offered tweaks are narrowed to the ones the catalog knows
+    [Fact]
+    public void Tweak_helpers_skip_keys_the_catalog_lacks()
+    {
+        Assert.Equal(new[] { "bt_xbox", "bt_rumble" }, U2c.SuggestedFor(U2c.Primary));
+        Assert.Equal(new[] { "ble_interval" }, U2c.ImplicitFor(U2c.Primary));
+
+        var profile = new ControllerProfile(
+            "copy", "Copy", "Copy", "Vendor", "disclaimer", "boot help",
+            U2c.Layout, U2c.Modes, U2c.Firmware, U2c.Protocol,
+            suggestedTweaks: new[] { "bt_xbox", "not_in_catalog" },
+            implicitTweaks: new[] { "missing" });
+
+        Assert.Equal(new[] { "bt_xbox" }, profile.SuggestedFor(profile.Primary));
+        Assert.Empty(profile.ImplicitFor(profile.Primary));
+    }
+
     // only the USB modes can read or write the controller
     [Fact]
     public void Usb_modes_are_the_only_ones_that_can_flash()

@@ -32,7 +32,8 @@ public sealed record Recipe(
     IReadOnlyList<Edit> Edits,
     string? Group = null,
     string? RequiresGroup = null,
-    string? EarlierFormOf = null);
+    string? EarlierFormOf = null,
+    string? Description = null);
 
 public sealed record FirmwareState(
     bool Known,

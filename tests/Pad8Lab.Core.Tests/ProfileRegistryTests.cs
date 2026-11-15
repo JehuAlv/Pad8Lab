@@ -45,4 +45,16 @@ public sealed class ProfileRegistryTests
     [Fact]
     public void Duplicate_ids_are_rejected() =>
         Assert.Throws<ArgumentException>(() => new ProfileRegistry(new[] { U2cWireless.Profile, U2cWireless.Profile }));
+
+    // two models cannot claim the same interface, or discovery returns one device twice
+    [Fact]
+    public void Duplicate_hid_claims_are_rejected()
+    {
+        var first = TemplateProfile.Create();
+        var second = new ControllerProfile(
+            "other-model", "Other model", "Other", "Vendor", "disclaimer", "boot help",
+            first.Layout, first.Modes, first.Firmware, first.Protocol);
+
+        Assert.Throws<ArgumentException>(() => new ProfileRegistry(new[] { first, second }));
+    }
 }
